@@ -21,8 +21,8 @@
   --radius-xl: 16px;
   --presentiel: #dcfce7;
   --presentiel-text: #166534;
-  --distanciel: #072752;
-  --distanciel-text: #a3acc9;
+  --distanciel: #dbeafe;
+  --distanciel-text: #1e40af;
   --danger: #ef4444;
   --transition: all 0.2s ease-in-out;
 }
@@ -201,7 +201,6 @@ body {
   align-items: center;
   gap: 8px;
   margin-left: auto;
-  
 }
 
 .btn-reset-filters {
@@ -236,40 +235,7 @@ body {
   align-items: center;
   border: 1px solid #bae6fd;
 }
-.btn-new-session {
-  background: linear-gradient(135deg, #63c0f2, #1d4ed8);
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
-}
 
-/* Hover */
-.btn-new-session:hover {
-  background: linear-gradient(135deg, #1d4ed8, #1e40af);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
-}
-
-/* Active click */
-.btn-new-session:active {
-  transform: translateY(0);
-  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.25);
-}
-
-/* Focus (accessibilité) */
-.btn-new-session:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
-}
 /* --- BARRE DE SEMAINE --- */
 .week-bar {
   background: rgba(255, 255, 255, 0.95);
@@ -578,120 +544,52 @@ body {
   overflow-y: auto;
 }
 
-/* --- CARDS DE SESSION REDESIGN --- */
+/* --- CARDS DE SESSION COMPACTES --- */
 .session-card {
-  border-radius: 5px;
+  border-radius: 3px;
   position: relative;
   cursor: grab;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  border: 1.5px solid transparent;
+  transition: var(--transition);
+  box-shadow: var(--shadow-xs);
+  border: 1px solid transparent;
   flex-shrink: 0;
-  overflow: hidden;
-}
-
-.session-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  border-radius: 5px 0 0 5px;
 }
 
 .session-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  transform: translateY(-2px) scale(1.01);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
 .session-card:active {
   cursor: grabbing;
-  transform: scale(0.97);
+  transform: scale(0.98) translateY(0);
 }
 
-/* === PRÉSENTIEL : vert vif === */
 .session-card.presentiel {
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-  border-color: #6ee7b7;
-  border-left: 3px solid #059669;
+  background: linear-gradient(135deg, var(--presentiel) 0%, #f0fdf4 100%);
+  border-left: 2px solid var(--presentiel-text);
 }
 
-.session-card.presentiel::after {
-  content: 'P';
-  position: absolute;
-  top: 3px;
-  right: 4px;
-  font-size: 0.45rem;
-  font-weight: 800;
-  color: #059669;
-  background: rgba(5,150,105,0.12);
-  border-radius: 3px;
-  padding: 1px 3px;
-  line-height: 1.4;
-  letter-spacing: 0.02em;
-}
-
-.session-card.presentiel .module-name {
-  color: #065f46;
-}
-
-.session-card.presentiel .sub-info {
-  color: #047857;
-}
-
-.session-card.presentiel .sub-info-extra {
-  color: #059669;
-  border-top-color: rgba(5, 150, 105, 0.15);
-}
-
-/* === DISTANCIEL : bleu violet === */
 .session-card.distanciel {
-  background: #c8e7ec;
-  border-color: #407e89;
-  border-left: 3px solid #033d47;
-}
-
-.session-card.distanciel::after {
-  content: 'D';
-  position: absolute;
-  top: 3px;
-  right: 4px;
-  font-size: 0.45rem;
-  font-weight: 800;
-  color: #93bbc2;
-  background:#033d47;
-  border-radius: 3px;
-  padding: 1px 3px;
-  line-height: 1.4;
-  letter-spacing: 0.02em;
-}
-
-.session-card.distanciel .module-name {
-  color: #1e738a;
-}
-
-.session-card.distanciel .sub-info {
-  color: #07515e;
-}
-
-.session-card.distanciel .sub-info-extra {
-  color: #06393d;
-  border-top-color: rgba(37, 99, 235, 0.15);
+  background: linear-gradient(135deg, var(--distanciel) 0%, #eff6ff 100%);
+  border-left: 2px solid var(--distanciel-text);
 }
 
 .module-name {
   font-weight: 700;
+  color: var(--text-main);
   letter-spacing: -0.01em;
   line-height: 1.2;
 }
 
 .sub-info {
-  opacity: 0.9;
+  opacity: 0.8;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .sub-info-extra {
+  color: var(--text-muted);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1px;
@@ -1199,244 +1097,39 @@ body {
   flex-wrap: wrap;
 }
 
-/* --- BADGES COMPTEURS SÉANCES (filtre bar) --- */
-.session-type-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 11px;
-  border-radius: 6px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  white-space: nowrap;
-  border: 1.5px solid;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+.btn-pdf {
+  background: white;
+  color: #475569;
+  border: 1.5px solid #cbd5e1;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-.session-type-badge::before {
-  content: '';
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  display: inline-block;
-  flex-shrink: 0;
+.btn-pdf:hover {
+  background: #f8fafc;
+  color: #1e293b;
+  border-color: #94a3b8;
 }
 
-.session-type-badge.presentiel-badge {
-  background: #f0fdf4;
-  color: #065f46;
-  border-color: #bbf7d0;
+.btn-new-session {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.3);
 }
 
-.session-type-badge.presentiel-badge::before {
-  background: #059669;
-  box-shadow: 0 0 0 2px rgba(5,150,105,0.2);
+.btn-new-session:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(14, 165, 233, 0.4);
 }
-
-.session-type-badge.distanciel-badge {
-  background: #b0e3ec;
-  color: #033d47;
-  border-color: #bfdbfe;
-}
-
-.session-type-badge.distanciel-badge::before {
-  background: #033d47;
-  box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
-}
-
-
-/* =========================
-   DARK MODE ROOT VARIABLES
-========================= */
-.dark-mode {
-  --bg-app: #0f172a;
-  --bg-card: #1e293b;
-  --text-main: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --border-color: #334155;
-  --border-light: #1e293b;
-
-  --presentiel: #064e3b;
-  --presentiel-text: #34d399;
-  --distanciel: #1e3a8a;
-  --distanciel-text: #60a5fa;
-}
-
-
-.dark-mode body {
-  background: var(--bg-app);
-  color: var(--text-main);
-}
-
-.dark-mode .main-content {
-  background: var(--bg-app) !important;
-}
-
-.dark-mode .top-navbar {
-  background: rgba(15, 23, 42, 0.95);
-  border-bottom: 1px solid var(--border-color);
-  backdrop-filter: blur(10px);
-}
-
-.dark-mode .brand-text-dark,
-.dark-mode .user-name-top {
-  color: var(--text-main);
-}
-
-.dark-mode .sidebar {
-  background: #0f172a;
-  border-right: 1px solid var(--border-color);
-}
-
-.dark-mode .nav-item {
-  color: var(--text-secondary);
-}
-
-.dark-mode .nav-item:hover {
-  background: rgba(255,255,255,0.05);
-  color: var(--text-main);
-}
-
-.dark-mode .week-bar {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-}
-
-.dark-mode .week-nav-btn {
-  background: #0f172a;
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-}
-
-.dark-mode .week-nav-btn:hover {
-  background: #2563eb;
-  border-color: #2563eb;
-}
-
-.dark-mode .week-range {
-  background: #0f172a;
-  color: var(--text-secondary);
-}
-.dark-mode .stat-card,
-.dark-mode .table-wrapper,
-.dark-mode .modal-content,
-.dark-mode .filters-section {
-  background: var(--bg-card) !important;
-  color: var(--text-main) !important;
-  border-color: var(--border-color) !important;
-}
-
-.dark-mode .day-col-head,
-.dark-mode .time-header {
-  background: #0f172a !important;
-  color: var(--text-secondary) !important;
-  border-color: var(--border-color) !important;
-}
-
-.dark-mode .day-col,
-.dark-mode .cell-interactive {
-  background: transparent !important;
-  border-color: var(--border-color) !important;
-  color: var(--text-main) !important;
-}
-.dark-mode .session-card.presentiel {
-  background: linear-gradient(135deg, #064e3b, #065f46);
-  border-color: #059669;
-}
-
-.dark-mode .session-card.presentiel .module-name {
-  color: #6ee7b7;
-}
-
-.dark-mode .session-card.presentiel .sub-info {
-  color: #34d399;
-}
-
-.dark-mode .session-card.distanciel {
-  background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
-  border-color: #2563eb;
-}
-
-.dark-mode .session-card.distanciel .module-name {
-  color: #bfdbfe;
-}
-
-.dark-mode .session-card.distanciel .sub-info {
-  color: #93c5fd;
-}
-.dark-mode input,
-.dark-mode select,
-.dark-mode textarea {
-  background: #0f172a !important;
-  color: var(--text-main) !important;
-  border-color: var(--border-color) !important;
-}
-
-.dark-mode button {
-  color: var(--text-main);
-}
-.dark-mode ::-webkit-scrollbar-thumb {
-  background: #334155;
-}
-
-.dark-mode ::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-/* --- STAT TYPES BADGES --- */
-.stat-card-presentiel {
-  border-top-color: #059669 !important;
-}
-
-.stat-card-presentiel:hover {
-  border-top-color: #059669 !important;
-}
-
-.stat-card-presentiel .stat-number {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-}
-
-.stat-card-distanciel {
-  border-top-color: #2563eb !important;
-}
-
-.stat-card-distanciel:hover {
-  border-top-color: #2563eb !important;
-}
-
-.stat-card-distanciel .stat-number {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-}
-
-.stat-type-icon {
-  font-size: 1.5rem;
-  margin-bottom: 4px;
-  display: block;
-}
-
-.stat-type-bar {
-  height: 3px;
-  border-radius: 2px;
-  margin-top: 8px;
-  width: 100%;
-}
-
-.stat-type-bar.presentiel-bar {
-  background: linear-gradient(90deg, #059669, #6ee7b7);
-}
-
-.stat-type-bar.distanciel-bar {
-  background: linear-gradient(90deg, #2563eb, #93c5fd);
-}
-
-
-
-
-
