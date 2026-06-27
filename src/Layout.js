@@ -57,7 +57,7 @@ const Layout = ({ children }) => {
             <div className="flex flex-col">
               <div className={`text-[0.65rem] font-bold text-slate-500 uppercase tracking-widest px-6 mb-2.5 ${!isSidebarOpen ? 'hidden' : ''}`}>PLANNING</div>
               <Link to="/" className={`flex items-center py-3 text-slate-300 no-underline text-[0.95rem] font-medium transition-all duration-200 border-l-[3px] border-transparent hover:bg-white/5 hover:text-white hover:border-sky-500/50 ${isSidebarOpen ? 'px-6 gap-3.5' : 'px-3 justify-center'} ${window.location.pathname === '/' ? 'text-white border-sky-500/50 bg-white/5' : ''}`}>
-                <span className={`text-[1.2rem] opacity-80 transition-opacity hover:opacity-100 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>📅</span>
+                <span className={`text-[1.2rem] font-black text-slate-400 dark:text-slate-300 opacity-90 transition-all hover:scale-110 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>E</span>
                 <span className={`${!isSidebarOpen ? 'hidden' : ''}`}>Emploi du temps</span>
               </Link>
             </div>
@@ -65,22 +65,22 @@ const Layout = ({ children }) => {
             <div className="flex flex-col">
               <div className={`text-[0.65rem] font-bold text-slate-500 uppercase tracking-widest px-6 mb-2.5 ${!isSidebarOpen ? 'hidden' : ''}`}>RESSOURCES</div>
                 <Link to="/groupes" className={`flex items-center py-3 text-slate-300 no-underline text-[0.95rem] font-medium transition-all duration-200 border-l-[3px] border-transparent hover:bg-white/5 hover:text-white hover:border-sky-500/50 ${isSidebarOpen ? 'px-6 gap-3.5' : 'px-3 justify-center'}`}>
-                  <span className={`text-[1.2rem] opacity-80 transition-opacity hover:opacity-100 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>👥</span>
+                  <span className={`text-[1.2rem] font-black text-slate-400 dark:text-slate-300 opacity-90 transition-all hover:scale-110 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>G</span>
                   <span className={`${!isSidebarOpen ? 'hidden' : ''}`}>Groupes / Filières</span>
                 </Link>
 
                 <Link to="/salles" className={`flex items-center py-3 text-slate-300 no-underline text-[0.95rem] font-medium transition-all duration-200 border-l-[3px] border-transparent hover:bg-white/5 hover:text-white hover:border-sky-500/50 ${isSidebarOpen ? 'px-6 gap-3.5' : 'px-3 justify-center'}`}>
-                  <span className={`text-[1.2rem] opacity-80 transition-opacity hover:opacity-100 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>🏫</span>
+                  <span className={`text-[1.2rem] font-black text-slate-400 dark:text-slate-300 opacity-90 transition-all hover:scale-110 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>S</span>
                   <span className={`${!isSidebarOpen ? 'hidden' : ''}`}>Salles / Espaces</span>
                 </Link>
 
                 <Link to="/formateurs" className={`flex items-center py-3 text-slate-300 no-underline text-[0.95rem] font-medium transition-all duration-200 border-l-[3px] border-transparent hover:bg-white/5 hover:text-white hover:border-sky-500/50 ${isSidebarOpen ? 'px-6 gap-3.5' : 'px-3 justify-center'}`}>
-                  <span className={`text-[1.2rem] opacity-80 transition-opacity hover:opacity-100 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>👤</span>
+                  <span className={`text-[1.2rem] font-black text-slate-400 dark:text-slate-300 opacity-90 transition-all hover:scale-110 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>F</span>
                   <span className={`${!isSidebarOpen ? 'hidden' : ''}`}>Formateurs</span>
                 </Link>
 
                 <Link to="/modules" className={`flex items-center py-3 text-slate-300 no-underline text-[0.95rem] font-medium transition-all duration-200 border-l-[3px] border-transparent hover:bg-white/5 hover:text-white hover:border-sky-500/50 ${isSidebarOpen ? 'px-6 gap-3.5' : 'px-3 justify-center'}`}>
-                  <span className={`text-[1.2rem] opacity-80 transition-opacity hover:opacity-100 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>📚</span>
+                  <span className={`text-[1.2rem] font-black text-slate-400 dark:text-slate-300 opacity-90 transition-all hover:scale-110 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>M</span>
                   <span className={`${!isSidebarOpen ? 'hidden' : ''}`}>Modules</span>
                 </Link> 
             </div>
@@ -88,11 +88,11 @@ const Layout = ({ children }) => {
             <div className="flex flex-col">
               <div className={`text-[0.65rem] font-bold text-slate-500 uppercase tracking-widest px-6 mb-2.5 ${!isSidebarOpen ? 'hidden' : ''}`}>GESTION</div>
               <a href="#" className={`flex items-center py-3 text-slate-300 no-underline text-[0.95rem] font-medium transition-all duration-200 border-l-[3px] border-transparent hover:bg-white/5 hover:text-white hover:border-sky-500/50 ${isSidebarOpen ? 'px-6 gap-3.5' : 'px-3 justify-center'}`}>
-                <span className={`text-[1.2rem] opacity-80 transition-opacity hover:opacity-100 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>📋</span>
+                <span className={`text-[1.2rem] font-black text-slate-400 dark:text-slate-300 opacity-90 transition-all hover:scale-110 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>A</span>
                 <span className={`${!isSidebarOpen ? 'hidden' : ''}`}>Affectations</span>
               </a>
               <a href="#" className={`flex items-center py-3 text-slate-300 no-underline text-[0.95rem] font-medium transition-all duration-200 border-l-[3px] border-transparent hover:bg-white/5 hover:text-white hover:border-sky-500/50 ${isSidebarOpen ? 'px-6 gap-3.5' : 'px-3 justify-center'}`}>
-                <span className={`text-[1.2rem] opacity-80 transition-opacity hover:opacity-100 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>⬇️</span>
+                <span className={`text-[1.2rem] font-black text-slate-400 dark:text-slate-300 opacity-90 transition-all hover:scale-110 ${!isSidebarOpen ? 'text-[1.4rem] m-0' : ''}`}>E</span>
                 <span className={`${!isSidebarOpen ? 'hidden' : ''}`}>Exports</span>
               </a>
             </div>

@@ -320,7 +320,7 @@ const Schedule = () => {
             <div className="px-3 py-1 rounded-full text-[0.75rem] font-semibold bg-sky-100 text-sky-700 border border-sky-200 flex items-center dark:bg-sky-900/40 dark:text-sky-300 dark:border-sky-800">
               Σ {totalHeures}h
             </div>
-            <button className="px-2.5 py-1 bg-gradient-to-br from-red-50 to-red-100 border-[1.5px] border-red-500 rounded text-red-500 text-[0.65rem] font-semibold cursor-pointer transition-colors whitespace-nowrap h-[26px] hover:bg-red-500 hover:text-white dark:bg-slate-800 dark:border-slate-700 dark:hover:border-red-500" onClick={handleExportPDF}>
+            <button className="px-2.5 py-1 bg-white border-[1.5px] border-slate-200 rounded text-slate-700 text-[0.65rem] font-semibold cursor-pointer transition-all whitespace-nowrap h-[26px] hover:bg-slate-100 hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:border-slate-600" onClick={handleExportPDF}>
               ⬇ PDF
             </button>
 
