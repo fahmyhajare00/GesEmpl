@@ -359,18 +359,18 @@ const Schedule = () => {
           <table className="w-full border-collapse table-fixed text-[0.7rem]">
             <thead>
               <tr>
-                <th className="bg-gradient-to-br from-slate-50 to-slate-100 p-2 border-b-2 border-slate-200 text-[0.65rem] text-slate-500 font-bold uppercase tracking-wide dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400">Jours</th>
+                <th className="bg-gradient-to-br from-slate-50 to-slate-100 p-2 border-b-2 border-slate-200 text-[0.65rem] text-slate-500 font-bold uppercase tracking-wide dark:from-slate-900 dark:to-slate-800 dark:border-slate-700 dark:text-slate-100">Jours</th>
                 {timeSlots.map(slot => (
-                  <th key={slot} className="bg-gradient-to-br from-slate-50 to-slate-100 p-2 border-b-2 border-slate-200 text-[0.65rem] text-slate-500 font-bold uppercase tracking-wide dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400">{slot}</th>
+                  <th key={slot} className="bg-gradient-to-br from-slate-50 to-slate-100 p-2 border-b-2 border-slate-200 text-[0.65rem] text-slate-500 font-bold uppercase tracking-wide dark:from-slate-900 dark:to-slate-800 dark:border-slate-700 dark:text-slate-100">{slot}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {weekDays.map((weekDay) => (
                 <tr key={weekDay.day}>
-                  <td className="w-[60px] font-bold text-center bg-gradient-to-br from-slate-50 to-slate-100 border-r-2 border-slate-200 text-slate-900 text-[0.7rem] uppercase tracking-wide p-1.5 dark:bg-transparent dark:border-slate-700 dark:text-slate-50">
+                  <td className="w-[60px] font-bold text-center bg-gradient-to-br from-slate-50 to-slate-100 border-r-2 border-slate-200 text-slate-900 text-[0.7rem] uppercase tracking-wide p-1.5 dark:from-slate-900 dark:to-slate-800 dark:border-slate-700 dark:text-slate-100">
                     <div>{weekDay.day}</div>
-                    <div style={{ fontSize: '0.5rem', opacity: 0.7 }}>{weekDay.date.getDate()}/{weekDay.date.getMonth() + 1}</div>
+                    <div style={{ fontSize: '0.5rem', opacity: 0.9 }}>{weekDay.date.getDate()}/{weekDay.date.getMonth() + 1}</div>
                   </td>
                   {timeSlots.map((slot, sIdx) => {
                     const cellSessions = filteredSessions.filter(s => s.day === weekDay.day && s.slotIdx === sIdx);
