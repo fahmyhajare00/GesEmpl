@@ -1,0 +1,409 @@
+import React, { useState, useMemo } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { addSession, removeSession, moveSession } from '../store';
+import '../index.css';
+
+const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+const timeSlots = ["8h30 - 11h", "11h - 13h30", "13h30 - 16h", "16h - 18h30"];
+
+const Schedule = () => {
+  const { user, sessions } = useSelector(state => state.schedule);
+  const dispatch = useDispatch();
+  const [filterPole, setFilterPole] = useState('all');
+  const [filterFormateur, setFilterFormateur] = useState('all');
+  const [filterSalle, setFilterSalle] = useState('all');
+  const [filterModule, setFilterModule] = useState('all');
+  const [filterAnnee, setFilterAnnee] = useState('all');
+  const [filterDate, setFilterDate] = useState('');
+  const [filterFiliere, setFilterFiliere] = useState('all');
+  const [currentWeek, setCurrentWeek] = useState(() => {
+    const today = new Date();
+    return getWeekRange(today);
+  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeCell, setActiveCell] = useState(null);
+  const [editingSession, setEditingSession] = useState(null);
+  const [formData, setFormData] = useState({ 
+    module: '', formateur: '', salle: '', pole: 'Digital', type: 'presentiel',
+    annee: '', filiere: '', date: ''
+  });
+
+  // --- LOGIQUE DE DATE ---
+  function getWeekRange(date) {
+    const start = new Date(date);
+    const day = start.getDay();
+    const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(start.setDate(diff));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 5);
+    
+    return {
+      start: monday,
+      end: sunday,
+      label: `${formatDate(monday)} - ${formatDate(sunday)}`
+    };
+  }
+
+  function formatDate(date) {
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  }
+
+  // Navigation semaine
+  const previousWeek = () => {
+    const newStart = new Date(currentWeek.start);
+    newStart.setDate(newStart.getDate() - 7);
+    setCurrentWeek(getWeekRange(newStart));
+  };
+
+  const nextWeek = () => {
+    const newStart = new Date(currentWeek.start);
+    newStart.setDate(newStart.getDate() + 7);
+    setCurrentWeek(getWeekRange(newStart));
+  };
+
+  const goToToday = () => {
+    setCurrentWeek(getWeekRange(new Date()));
+  };
+
+  const handleWeekChange = (e) => {
+    const selectedDate = new Date(e.target.value);
+    setCurrentWeek(getWeekRange(selectedDate));
+  };
+
+  const weekDays = useMemo(() => {
+    const daysOfWeek = [];
+    const start = new Date(currentWeek.start);
+    for (let i = 0; i < 6; i++) {
+      const date = new Date(start);
+      date.setDate(start.getDate() + i);
+      daysOfWeek.push({
+        day: days[i],
+        date: date,
+        dateStr: date.toISOString().split('T')[0]
+      });
+    }
+    return daysOfWeek;
+  }, [currentWeek]);
+
+  // --- FILTRAGE ---
+  const filteredSessions = useMemo(() => {
+    return sessions.filter(s => {
+      const mP = filterPole === 'all' || s.pole === filterPole;
+      const mF = filterFormateur === 'all' || s.formateur === filterFormateur;
+      const mS = filterSalle === 'all' || s.salle === filterSalle;
+      const mModule = filterModule === 'all' || s.module === filterModule;
+      const mAnnee = filterAnnee === 'all' || s.annee === filterAnnee;
+      const mDate = !filterDate || s.date === filterDate;
+      const mFiliere = filterFiliere === 'all' || s.filiere === filterFiliere;
+      return mP && mF && mS && mModule && mAnnee && mDate && mFiliere;
+    });
+  }, [sessions, filterPole, filterFormateur, filterSalle, filterModule, filterAnnee, filterDate, filterFiliere]);
+
+  // --- CALCUL DU TOTAL DES HEURES ---
+  const totalHeures = useMemo(() => {
+    // Chaque séance = 2h30 soit 2.5h
+    return filteredSessions.length * 2.5;
+  }, [filteredSessions]);
+
+  const listFormateurs = [...new Set(sessions.map(s => s.formateur))];
+  const listSalles = [...new Set(sessions.map(s => s.salle))];
+  const listModules = [...new Set(sessions.map(s => s.module))];
+  const listAnnees = [...new Set(sessions.map(s => s.annee).filter(Boolean))];
+  const listFilieres = [...new Set(sessions.map(s => s.filiere).filter(Boolean))];
+
+  // --- ACTIONS ---
+  const handleOpenAdd = (day, slotIdx) => {
+    setEditingSession(null);
+    setActiveCell({ day, slotIdx });
+    setFormData({ 
+      module: '', formateur: '', salle: '', pole: 'Digital', type: 'presentiel',
+      annee: '', filiere: '', date: ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (e, session) => {
+    e.stopPropagation();
+    setEditingSession(session);
+    setFormData({ ...session });
+    setIsModalOpen(true);
+  };
+
+  const handleClose = () => {
+    setIsModalOpen(false);
+    setEditingSession(null);
+  };
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    if (editingSession) {
+      dispatch(removeSession(editingSession.id));
+      dispatch(addSession({ ...formData, id: editingSession.id }));
+    } else {
+      dispatch(addSession({ ...formData, id: Date.now(), ...activeCell }));
+    }
+    handleClose();
+  };
+
+  const handleResetFilters = () => {
+    setFilterPole('all');
+    setFilterFormateur('all');
+    setFilterSalle('all');
+    setFilterModule('all');
+    setFilterAnnee('all');
+    setFilterDate('');
+    setFilterFiliere('all');
+  };
+
+  const handleDragStart = (e, sessionId) => e.dataTransfer.setData("sessionId", sessionId);
+  const handleDragOver = (e) => e.preventDefault();
+  const handleDrop = (e, targetDay, targetSlotIdx) => {
+    e.preventDefault();
+    const sessionId = Number(e.dataTransfer.getData("sessionId"));
+    dispatch(moveSession({ id: sessionId, day: targetDay, slotIdx: targetSlotIdx }));
+  };
+
+  const isCurrentWeek = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(currentWeek.start);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(currentWeek.end);
+    end.setHours(23, 59, 59, 999);
+    return today >= start && today <= end;
+  }, [currentWeek]);
+
+  return (
+    <div className="app-container">
+      <section className="stats-dashboard">
+        <div className="stat-card">
+          <div className="stat-number">5</div>
+          <div className="stat-label">Formateurs du pôle</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-number">128</div>
+          <div className="stat-label">Séances / sem.</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-number">12</div>
+          <div className="stat-label">Salles du pôle</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-number">14</div>
+          <div className="stat-label">Séances à accepter</div>
+        </div>
+      </section>
+
+      <section className="filters-section">
+        <div className="filters-grid">
+          <div className="filters-row-selectors" style={{ display: 'flex', flexWrap: 'nowrap', gap: '12px', width: '100%', overflowX: 'auto', paddingBottom: '8px' }}>
+            <div className="filter-group" style={{ minWidth: '130px' }}>
+              <label>Pôle</label>
+              <select value={filterPole} onChange={(e) => setFilterPole(e.target.value)}>
+                <option value="all">Tous les pôles</option>
+                <option value="Digital">Digital (DIA)</option>
+                <option value="Gestion">Pôle Gestion 🔒</option>
+              </select>
+            </div>
+            
+            <div className="filter-group" style={{ minWidth: '140px' }}>
+              <label>Module</label>
+              <select value={filterModule} onChange={(e) => setFilterModule(e.target.value)}>
+                <option value="all">Tous les modules</option>
+                {listModules.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+            
+            <div className="filter-group" style={{ minWidth: '140px' }}>
+              <label>Année</label>
+              <select value={filterAnnee} onChange={(e) => setFilterAnnee(e.target.value)}>
+                <option value="all">Toutes les années</option>
+                {listAnnees.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+            
+            <div className="filter-group" style={{ minWidth: '140px' }}>
+              <label>Filière</label>
+              <select value={filterFiliere} onChange={(e) => setFilterFiliere(e.target.value)}>
+                <option value="all">Toutes les filières</option>
+                {listFilieres.map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+            
+            <div className="filter-group" style={{ minWidth: '150px' }}>
+              <label>Formateur</label>
+              <select value={filterFormateur} onChange={(e) => setFilterFormateur(e.target.value)}>
+                <option value="all">Tous les formateurs</option>
+                {listFormateurs.map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+
+            <div className="filter-group" style={{ minWidth: '140px' }}>
+              <label>Salle</label>
+              <select value={filterSalle} onChange={(e) => setFilterSalle(e.target.value)}>
+                <option value="all">Toutes les salles</option>
+                {listSalles.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+          
+          <div className="filters-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
+            <button className="btn-reset-filters" onClick={handleResetFilters}>
+              ↻ Réinitialiser
+            </button>
+            
+            <div className="total-hours-badge">
+              Σ {totalHeures}h
+            </div>
+            
+            <button className="btn-pdf">
+              ⬇ PDF
+            </button>
+
+            <button className="btn-new-session" onClick={() => setIsModalOpen(true)}>
+              + Nouvelle séance
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="week-bar">
+        <div className="week-nav-side">
+          <button className="btn-reset-filters" style={{ padding: '8px 16px', borderRadius: '20px' }} onClick={previousWeek}>
+            ← Semaine précédente
+          </button>
+        </div>
+        <div className="week-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+          <span className="week-range" style={{ fontSize: '1rem', background: 'transparent', color: '#0f172a' }}>{currentWeek.label}</span>
+          <div className="week-days">
+            {weekDays.map((wd, idx) => (
+              <div key={idx} className={`week-day-badge ${idx === new Date().getDay() - 1 ? 'active' : ''}`}>
+                {wd.day.slice(0, 3)} {wd.date.getDate()}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="week-nav-side" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn-reset-filters" style={{ padding: '8px 16px', borderRadius: '20px' }} onClick={nextWeek}>
+            Semaine suivante →
+          </button>
+        </div>
+      </section>
+
+      <div className="table-wrapper">
+        <table className="schedule-table">
+          <thead>
+            <tr>
+              <th className="day-col-head">Jours</th>
+              {timeSlots.map(slot => (
+                <th key={slot} className="time-header">{slot}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {weekDays.map((weekDay) => (
+              <tr key={weekDay.day}>
+                <td className="day-col">
+                  <div>{weekDay.day}</div>
+                  <div style={{ fontSize: '0.5rem', opacity: 0.7 }}>{weekDay.date.getDate()}/{weekDay.date.getMonth() + 1}</div>
+                </td>
+                {timeSlots.map((slot, sIdx) => {
+                  const cellSessions = filteredSessions.filter(s => s.day === weekDay.day && s.slotIdx === sIdx);
+                  return (
+                    <td key={sIdx} className="cell-interactive" onClick={() => handleOpenAdd(weekDay.day, sIdx)} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, weekDay.day, sIdx)}>
+                      <div className="cell-content">
+                        {cellSessions.map(s => (
+                          <div key={s.id} className={`session-card ${s.type}`} draggable onDragStart={(e) => handleDragStart(e, s.id)} onClick={(e) => handleOpenEdit(e, s)}>
+                            <button className="btn-delete-circle" onClick={(e) => { e.stopPropagation(); if(window.confirm("Supprimer ?")) dispatch(removeSession(s.id)); }}>✕</button>
+                            <div className="module-name">{s.module}</div>
+                            <div className="sub-info">{s.formateur} • {s.salle}</div>
+                            {(s.annee || s.filiere) && <div className="sub-info-extra">{s.annee} {s.filiere && `• ${s.filiere}`}</div>}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="add-hint">+</div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={handleClose}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h2 className="modal-title">{editingSession ? 'Modifier la Séance' : 'Nouvelle Séance'}</h2>
+            <form onSubmit={handleSave} className="modal-grid-form">
+              <div className="form-group full">
+                <label>Module</label>
+                <select required className="form-input" value={formData.module} onChange={e => setFormData({...formData, module: e.target.value})}>
+                  <option value="" disabled>Sélectionner un module</option>
+                  {listModules.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Formateur</label>
+                <select required className="form-input" value={formData.formateur} onChange={e => setFormData({...formData, formateur: e.target.value})}>
+                  <option value="" disabled>Sélectionner un formateur</option>
+                  {listFormateurs.map(f => <option key={f} value={f}>{f}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Salle / Lien</label>
+                <select required className="form-input" value={formData.salle} onChange={e => setFormData({...formData, salle: e.target.value})}>
+                  <option value="" disabled>Sélectionner une salle</option>
+                  {listSalles.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Pôle</label>
+                <select className="form-input" value={formData.pole} onChange={e => setFormData({...formData, pole: e.target.value})}>
+                  <option value="Digital">Digital</option>
+                  <option value="Gestion">Gestion</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Type</label>
+                <div className="type-toggle-group">
+                  <button type="button" className={`toggle-btn ${formData.type === 'presentiel' ? 'active' : ''}`} onClick={() => setFormData({...formData, type: 'presentiel'})}>Présentiel</button>
+                  <button type="button" className={`toggle-btn ${formData.type === 'distanciel' ? 'active' : ''}`} onClick={() => setFormData({...formData, type: 'distanciel'})}>Distance</button>
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Année</label>
+                <select className="form-input" value={formData.annee || ''} onChange={e => setFormData({...formData, annee: e.target.value})}>
+                  <option value="">Sélectionner</option>
+                  <option value="1ère année">1ère année</option>
+                  <option value="2ème année">2ème année</option>
+                  <option value="3ème année">3ème année</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Filière</label>
+                <select className="form-input" value={formData.filiere || ''} onChange={e => setFormData({...formData, filiere: e.target.value})}>
+                  <option value="">Sélectionner</option>
+                  <option value="DIA">DIA</option>
+                  <option value="GC">GC</option>
+                  <option value="RIW">RIW</option>
+                  <option value="GE">GE</option>
+                </select>
+              </div>
+              <div className="form-group full">
+                <label>Date</label>
+                <input type="date" className="form-input" value={formData.date || ''} onChange={e => setFormData({...formData, date: e.target.value})} />
+              </div>
+              <div className="modal-footer full">
+                <button type="button" className="btn-secondary" onClick={handleClose}>Annuler</button>
+                <button type="submit" className="btn-primary">{editingSession ? 'Mettre à jour' : 'Ajouter la séance'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Schedule;
