@@ -169,6 +169,7 @@ const Schedule = () => {
         s.id !== editingSession?.id && 
         s.day === targetDay && 
         s.slotIdx === targetSlotIdx && 
+        s.weekKey === currentWeekKey &&
         (s.formateur === formData.formateur || s.salle === formData.salle)
       );
 
@@ -510,6 +511,7 @@ const Schedule = () => {
                         sess.id !== editingSession?.id &&
                         sess.day === targetDay &&
                         sess.slotIdx === targetSlotIdx &&
+                        sess.weekKey === currentWeekKey &&
                         sess.salle === salle
                       );
                     })

@@ -167,6 +167,7 @@ const GestionnaireStagiaire = () => {
         s.id !== editingSession?.id && 
         s.day === targetDay && 
         s.slotIdx === targetSlotIdx && 
+        s.weekKey === currentWeekKey &&
         (s.formateur === formData.formateur || s.salle === formData.salle)
       );
 

@@ -35,10 +35,7 @@ function loadSessions() {
       });
     }
   } catch {}
-  return [
-    { id: 991, module: "Dev FrontEnd", formateur: "A. Karim", salle: "Salle 4", pole: "DIA", type: "presentiel", day: "Lundi", slotIdx: 1, weekKey: currentWeekKey, status: "pending" },
-    { id: 992, module: "Design UI/UX", formateur: "S. Rami", pole: "DIA", type: "distanciel", day: "Jeudi", slotIdx: 2, weekKey: currentWeekKey, status: "pending" }
-  ];
+  return [];
 }
 
 function saveSessions(sessions) {
