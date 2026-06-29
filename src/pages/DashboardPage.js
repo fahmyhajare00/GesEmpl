@@ -183,6 +183,14 @@ const DashboardPage = () => {
     return addSeance(seanceData);
   };
 
+  // Gestion du déplacement de séance par drag & drop (passe en 'En attente' pour validation chef de pôle)
+  const handleMoveSeance = (seanceId, newJour, heureDebut, heureFin) => {
+    const result = moveSeance(seanceId, newJour, heureDebut, heureFin);
+    if (result && !result.success) {
+      alert('Conflit détecté : ' + (result.errors || []).join(' | '));
+    }
+  };
+
   // Export PDF
   const handleExportPDF = () => {
     let title = "Emploi du Temps";
@@ -255,30 +263,30 @@ const DashboardPage = () => {
       </div>
 
       {/* ===== Barre de filtres et Angle de consultation ===== */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 space-y-4 transition-colors duration-200">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 space-y-4 transition-colors duration-200">
         {/* Choix de l'angle de vue */}
-        <div className="flex gap-2 p-1 bg-gray-50 dark:bg-gray-900 rounded-lg w-fit transition-colors duration-200">
+        <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-lg w-fit transition-colors duration-200">
           <button
             onClick={() => { setViewType('formateur'); }}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${viewType === 'formateur' ? 'bg-sky-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${viewType === 'formateur' ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
           >
             Par Formateur
           </button>
           <button
             onClick={() => { setViewType('groupe'); }}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${viewType === 'groupe' ? 'bg-sky-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${viewType === 'groupe' ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
           >
             Par Groupe
           </button>
           <button
             onClick={() => { setViewType('pole'); }}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${viewType === 'pole' ? 'bg-sky-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${viewType === 'pole' ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
           >
             Par Pôle
           </button>
           <button
             onClick={() => { setViewType('espace'); }}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${viewType === 'espace' ? 'bg-sky-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${viewType === 'espace' ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
           >
             Par Espace / Salle
           </button>
@@ -357,7 +365,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Badges récapitulatifs et actions */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-700">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="success">Présentiel : {sessionCounts.presentiel}</Badge>
             <Badge variant="info">Distanciel : {sessionCounts.distanciel}</Badge>
@@ -381,21 +389,21 @@ const DashboardPage = () => {
       </div>
 
       {/* ===== Navigation hebdomadaire ===== */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 transition-colors duration-200">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 transition-colors duration-200">
         <div className="flex items-center justify-between">
           <button
             onClick={prevWeek}
-            className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-sky-600 dark:hover:text-sky-400 transition"
+            className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition"
           >
             <FiChevronLeft className="w-4 h-4" />
             <span>Semaine précédente</span>
           </button>
 
-          <span className="font-bold text-gray-700 dark:text-gray-200 text-sm">{weekLabel}</span>
+          <span className="font-bold text-slate-700 dark:text-slate-200 text-sm">{weekLabel}</span>
 
           <button
             onClick={nextWeek}
-            className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-sky-600 dark:hover:text-sky-400 transition"
+            className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition"
           >
             <span>Semaine suivante</span>
             <FiChevronRight className="w-4 h-4" />
@@ -405,15 +413,15 @@ const DashboardPage = () => {
 
       {/* ===== Grille de l'emploi du temps ===== */}
       {viewType === 'groupe' && !selectedGroupe ? (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 text-center text-gray-400 dark:text-gray-500 border border-gray-100 dark:border-gray-700 transition-colors duration-200">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-8 text-center text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 transition-colors duration-200">
           Veuillez sélectionner une filière puis un groupe pour afficher son emploi du temps.
         </div>
       ) : viewType === 'pole' && !selectedPole ? (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 text-center text-gray-400 dark:text-gray-500 border border-gray-100 dark:border-gray-700 transition-colors duration-200">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-8 text-center text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 transition-colors duration-200">
           Veuillez sélectionner un pôle pour afficher son emploi du temps global.
         </div>
       ) : viewType === 'espace' && !selectedSalle ? (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 text-center text-gray-400 dark:text-gray-500 border border-gray-100 dark:border-gray-700 transition-colors duration-200">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-8 text-center text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 transition-colors duration-200">
           Veuillez sélectionner une salle pour afficher son planning d'occupation.
         </div>
       ) : (
@@ -427,6 +435,7 @@ const DashboardPage = () => {
           jours={jours}
           creneaux={creneaux}
           onCellClick={handleCellClick}
+          onMoveSeance={handleMoveSeance}
         />
       )}
 
