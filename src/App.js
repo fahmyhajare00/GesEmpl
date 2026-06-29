@@ -5,6 +5,8 @@ import Formateurs from './pages/Formateurs';
 import Salles from './pages/Salles';
 import Groupes from './pages/Groupes';
 import Layout from "./Layout";
+import GestionnaireStagiaire from "./pages/GestionnaireStagiaire";
+import AbsencesFormateurs from "./pages/AbsencesFormateurs";
 
 function App() {
   return (
@@ -16,6 +18,11 @@ function App() {
           <Route path="formateurs" element={<Formateurs />} />
           <Route path="salles" element={<Salles />} />
           <Route path="groupes" element={<Groupes />} />
+          <Route path="/gestionnaire-stagiaire"
+              element={<GestionnaireStagiaire />}/>
+          <Route path="/absences-formateurs"
+              element={<AbsencesFormateurs />}/>
+
         </Route>
       </Routes>
     </BrowserRouter>

@@ -36,3 +36,4 @@ Elle permet une gestion dynamique et intelligente des emplois du temps en tenant
 - 🌙 Mode sombre (Dark Mode)
 - 🔄 Navigation fluide entre pages
 
+
