@@ -20,28 +20,28 @@ const modules = [
 
 export default function ModulesView() {
   return (
-    <section className="view-panel">
-      <div className="view-header">
-        <h2 className="view-title">Mes modules</h2>
+    <section className="mt-[18px] p-[18px] rounded-[22px] border border-border-color bg-bg-card [box-shadow:0_24px_60px_rgba(15,23,42,0.12)] transition-all duration-250 dark:[box-shadow:0_30px_80px_rgba(0,0,0,0.25)]">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-[18px]">
+        <h2 className="m-0 text-[20px] font-bold text-text-main">Mes modules</h2>
       </div>
 
-      <div className="modules-table-wrap">
-        <table className="modules-table">
+      <div className="w-full overflow-x-auto mt-4">
+        <table className="w-full border-collapse min-w-[720px]">
           <thead>
             <tr>
-              <th>Module</th>
-              <th>MHT</th>
-              <th>Coef</th>
-              <th>EFM Régional</th>
+              <th className="text-left font-bold text-[13px] uppercase tracking-[0.08em] p-4 border-b border-border-light text-text-secondary">Module</th>
+              <th className="text-left font-bold text-[13px] uppercase tracking-[0.08em] p-4 border-b border-border-light text-text-secondary">MHT</th>
+              <th className="text-left font-bold text-[13px] uppercase tracking-[0.08em] p-4 border-b border-border-light text-text-secondary">Coef</th>
+              <th className="text-left font-bold text-[13px] uppercase tracking-[0.08em] p-4 border-b border-border-light text-text-secondary">EFM Régional</th>
             </tr>
           </thead>
           <tbody>
             {modules.map((module) => (
-              <tr key={module.name}>
-                <td>{module.name}</td>
-                <td>{module.mht}</td>
-                <td>{module.coef}</td>
-                <td>{module.efm}</td>
+              <tr key={module.name} className="bg-bg-card odd:bg-bg-card/80">
+                <td className="p-4 border-b border-border-light text-text-main text-[14px] min-w-[260px]">{module.name}</td>
+                <td className="p-4 border-b border-border-light text-text-main text-[14px]">{module.mht}</td>
+                <td className="p-4 border-b border-border-light text-text-main text-[14px]">{module.coef}</td>
+                <td className="p-4 border-b border-border-light text-text-main text-[14px]">{module.efm}</td>
               </tr>
             ))}
           </tbody>

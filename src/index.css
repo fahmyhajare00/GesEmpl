@@ -1,38 +1,65 @@
-:root {
-  color: #252a34;
-  background: #eef1f7;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
-  letter-spacing: 0.01em;
+@import "tailwindcss";
+
+@theme {
+  /* Design Tokens from App.css */
+  --color-primary: #4f8bff;
+  --color-primary-hover: #326be8;
+  --color-primary-light: #e3eeff;
+  
+  --color-bg-app: #e8edf7;
+  --color-bg-card: #f8fbff;
+  --color-bg-surface: #ffffff;
+  
+  --color-text-main: #111a37;
+  --color-text-secondary: #566586;
+  --color-text-muted: #7d8aae;
+  
+  --color-border-main: #d8e1ef;
+  --color-border-light: #eef2f8;
+  
+  --color-presentiel: #ddf8e4;
+  --color-presentiel-text: #166534;
+  --color-distanciel: #d9f0ff;
+  --color-distanciel-text: #0f4cff;
+  
+  --color-sidebar-bg: #111d3a;
+  --color-sidebar-text: #b8c6e3;
+  --color-sidebar-border: #17274a;
+  --color-nav-muted: #7d8caa;
+
+  --radius-card: 22px;
 }
 
-* {
-  box-sizing: border-box;
+/* Base resets & setups */
+@layer base {
+  html, body, #root {
+    @apply h-full;
+  }
+  
+  body {
+    @apply m-0 min-h-full font-sans text-sm bg-bg-app text-text-main antialiased transition-colors duration-300;
+  }
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  background: #eef1f7;
-}
-
-#root {
-  min-height: 100vh;
-}
-
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-img {
-  display: block;
-  max-width: 100%;
+/* Tailwind Dark Mode Overrides */
+.dark {
+  --color-bg-app: #0b1226;
+  --color-bg-card: #101b36;
+  --color-bg-surface: #131f3c;
+  
+  --color-text-main: #f8fbff;
+  --color-text-secondary: #b8c8e0;
+  --color-text-muted: #7c8ab3;
+  
+  --color-border-main: rgba(255, 255, 255, 0.08);
+  --color-border-light: rgba(255, 255, 255, 0.06);
+  
+  --color-sidebar-bg: #0a1330;
+  --color-sidebar-text: #d6e2ff;
+  --color-nav-muted: #8a9ac1;
+  
+  --color-presentiel: #1f6f3f;
+  --color-presentiel-text: #d8f7dd;
+  --color-distanciel: #205b95;
+  --color-distanciel-text: #cce7ff;
 }
