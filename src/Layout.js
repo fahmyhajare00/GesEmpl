@@ -81,6 +81,10 @@ const Layout = ({ children }) => {
 
             <div className="nav-group">
               <div className="nav-group-title">GESTION</div>
+              <Link to="/absences-formateurs" className="nav-item">
+                <span className="nav-icon">🚫</span>
+                <span className="nav-text">Absences formateurs</span>
+              </Link>
               <a href="#" className="nav-item">
                 <span className="nav-icon">📋</span>
                 <span className="nav-text">Affectations</span>
