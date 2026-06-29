@@ -4,12 +4,18 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 
 const Layout = () => {
+  // État d'ouverture/fermeture de la sidebar sur mobile
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // État de collapse de la sidebar sur desktop
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Toggle mobile sidebar
   const toggleMobileSidebar = () => setSidebarOpen((prev) => !prev);
+
+  // Toggle desktop collapse
   const toggleSidebarCollapse = () => setSidebarCollapsed((prev) => !prev);
 
+  // Le bouton du header fait les deux selon la taille d'écran
   const handleMenuToggle = () => {
     if (window.innerWidth >= 1024) {
       toggleSidebarCollapse();
@@ -19,28 +25,27 @@ const Layout = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden font-sans bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-slate-50 transition-colors duration-200">
-      {/* Header fixe en haut */}
-      <Header onMenuToggle={handleMenuToggle} />
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 transition-colors duration-300">
+      {/* Barre latérale de navigation */}
+      <Sidebar
+        isOpen={sidebarOpen}
+        isCollapsed={sidebarCollapsed}
+        onToggle={toggleMobileSidebar}
+        onCollapse={toggleSidebarCollapse}
+      />
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar
-          isOpen={sidebarOpen}
-          isCollapsed={sidebarCollapsed}
-          onToggle={toggleMobileSidebar}
-          onCollapse={toggleSidebarCollapse}
-        />
+      {/* Zone de contenu principal avec marge pour la sidebar sur desktop */}
+      <div
+        className={`transition-all duration-300 ease-in-out ${
+          sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
+        }`}
+      >
+        {/* En-tête fixe en haut */}
+        <Header onMenuToggle={handleMenuToggle} />
 
-        {/* Contenu principal */}
-        <main
-          className={`flex-1 bg-slate-100 dark:bg-slate-900 overflow-y-auto transition-all duration-300 ${
-            sidebarCollapsed ? 'lg:ml-[84px]' : 'lg:ml-[260px]'
-          }`}
-        >
-          <div className="p-5">
-            <Outlet />
-          </div>
+        {/* Contenu de la page enfant (via le routeur) */}
+        <main className="p-6 bg-slate-100 dark:bg-slate-900 min-h-screen transition-colors duration-300">
+          <Outlet />
         </main>
       </div>
     </div>

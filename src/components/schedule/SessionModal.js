@@ -21,7 +21,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, formateur, defaultJour, defau
   } = useData();
 
   // États du formulaire
-  const [selectedGroupe, setSelectedGroupe] = useState('');
+  const [selectedGroupes, setSelectedGroupes] = useState([]); // Array pour permettre la fusion
   const [selectedModule, setSelectedModule] = useState('');
   const [selectedEspace, setSelectedEspace] = useState('');
   const [selectedJour, setSelectedJour] = useState('');
@@ -52,16 +52,18 @@ const SessionModal = ({ isOpen, onClose, onSubmit, formateur, defaultJour, defau
     );
     
     overlappingSeances.forEach(s => {
-      occupiedGroupes.push(s.groupe_id);
+      const gIds = s.groupes_ids || (s.groupe_id ? [s.groupe_id] : []);
+      gIds.forEach(id => occupiedGroupes.push(id));
       occupiedEspaces.push(s.espace_id);
     });
   }
 
-  // Filtrer les modules en fonction de la filière du groupe sélectionné
+  // Filtrer les modules en fonction de la filière du/des groupe(s) sélectionné(s)
   const [filteredModules, setFilteredModules] = useState([]);
   useEffect(() => {
-    if (selectedGroupe) {
-      const groupe = groupes.find(g => g.id === Number(selectedGroupe));
+    if (selectedGroupes.length > 0) {
+      // On prend la filière du premier groupe sélectionné
+      const groupe = groupes.find(g => g.id === Number(selectedGroupes[0]));
       if (groupe) {
         const mods = modules.filter(m => m.filiere_id === groupe.filiere_id);
         setFilteredModules(mods);
@@ -70,12 +72,12 @@ const SessionModal = ({ isOpen, onClose, onSubmit, formateur, defaultJour, defau
       setFilteredModules([]);
     }
     setSelectedModule('');
-  }, [selectedGroupe, groupes, modules]);
+  }, [selectedGroupes, groupes, modules]);
 
   // Réinitialiser les erreurs lors de l'ouverture
   useEffect(() => {
     if (isOpen) {
-      setSelectedGroupe('');
+      setSelectedGroupes([]);
       setSelectedModule('');
       setSelectedEspace('');
       setSelectedJour(defaultJour || '');
@@ -90,16 +92,17 @@ const SessionModal = ({ isOpen, onClose, onSubmit, formateur, defaultJour, defau
     e.preventDefault();
     setErrors([]);
 
-    if (!selectedGroupe || !selectedModule || !selectedEspace || !selectedJour || !selectedCreneau) {
+    if (selectedGroupes.length === 0 || !selectedModule || !selectedEspace || !selectedJour || !selectedCreneau) {
       setErrors(['Veuillez remplir tous les champs obligatoires.']);
       return;
     }
 
     if (!selectedCreneauObj) return;
 
-    // Préparation de la séance pour détection de conflits
+    // Préparation de la séance avec plusieurs groupes potentiels
     const newSeanceData = {
-      groupe_id: Number(selectedGroupe),
+      groupe_id: Number(selectedGroupes[0]), // Pour compatibilité
+      groupes_ids: selectedGroupes.map(Number), // Nouvelle gestion
       formateur_id: formateur.id,
       module_id: Number(selectedModule),
       espace_id: Number(selectedEspace),
@@ -128,15 +131,13 @@ const SessionModal = ({ isOpen, onClose, onSubmit, formateur, defaultJour, defau
     }
   };
 
-  // Liste des options de groupes avec marquage "Occupé"
-  const groupeOptions = filteredGroupes.map(g => {
-    const isOccupied = occupiedGroupes.includes(g.id);
-    return {
-      value: String(g.id),
-      label: isOccupied ? `${g.nom_groupe} (Occupé)` : g.nom_groupe,
-      disabled: isOccupied
-    };
-  });
+  const handleGroupeToggle = (groupeIdStr) => {
+    if (selectedGroupes.includes(groupeIdStr)) {
+      setSelectedGroupes(selectedGroupes.filter(id => id !== groupeIdStr));
+    } else {
+      setSelectedGroupes([...selectedGroupes, groupeIdStr]);
+    }
+  };
 
   // Liste des options de salles avec marquage "Occupé" et "Non autorisé"
   const espaceOptions = espaces.filter(e => e.actif).map(e => {
@@ -214,16 +215,40 @@ const SessionModal = ({ isOpen, onClose, onSubmit, formateur, defaultJour, defau
             />
           </div>
 
-          {/* Sélection Groupe */}
-          <Select
-            label="Groupe d'apprenants *"
-            value={selectedGroupe}
-            onChange={(e) => setSelectedGroupe(e.target.value)}
-            options={groupeOptions}
-            placeholder={selectedJour && selectedCreneau ? "Sélectionner le groupe..." : "Veuillez d'abord choisir un jour et un créneau"}
-            disabled={!selectedJour || !selectedCreneau}
-            className={!selectedJour || !selectedCreneau ? "opacity-60" : ""}
-          />
+          {/* Sélection Multiple Groupes (Chips/Pills) */}
+          <div className={`space-y-2 ${!selectedJour || !selectedCreneau ? 'opacity-60 pointer-events-none' : ''}`}>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Groupes d'apprenants * (Sélection multiple)
+            </label>
+            <div className="flex flex-wrap gap-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/50 min-h-[60px] max-h-[140px] overflow-y-auto">
+              {!selectedJour || !selectedCreneau ? (
+                <p className="text-sm text-gray-400 w-full text-center py-1">Veuillez d'abord choisir un jour et un créneau</p>
+              ) : (
+                filteredGroupes.map(g => {
+                  const isOccupied = occupiedGroupes.includes(g.id);
+                  const isSelected = selectedGroupes.includes(String(g.id));
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      disabled={isOccupied}
+                      onClick={() => handleGroupeToggle(String(g.id))}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                        isOccupied 
+                          ? 'bg-gray-100 text-gray-400 border-gray-200 dark:bg-gray-800 dark:text-gray-600 dark:border-gray-700 cursor-not-allowed'
+                          : isSelected
+                            ? 'bg-sky-500 text-white border-sky-600 shadow-sm shadow-sky-200 dark:shadow-none'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {g.nom_groupe}
+                      {isOccupied && <span className="ml-1 opacity-70 font-normal">(Occupé)</span>}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
 
           {/* Sélection Module */}
           <Select
@@ -231,9 +256,9 @@ const SessionModal = ({ isOpen, onClose, onSubmit, formateur, defaultJour, defau
             value={selectedModule}
             onChange={(e) => setSelectedModule(e.target.value)}
             options={filteredModules.map(m => ({ value: String(m.id), label: `${m.code_module} - ${m.nom_module}` }))}
-            placeholder={selectedGroupe ? "Sélectionner le module..." : "Veuillez d'abord sélectionner un groupe"}
-            className={!selectedGroupe ? "opacity-60" : ""}
-            disabled={!selectedGroupe}
+            placeholder={selectedGroupes.length > 0 ? "Sélectionner le module..." : "Veuillez d'abord sélectionner un groupe"}
+            className={selectedGroupes.length === 0 ? "opacity-60" : ""}
+            disabled={selectedGroupes.length === 0}
           />
 
           {/* Sélection Espace */}

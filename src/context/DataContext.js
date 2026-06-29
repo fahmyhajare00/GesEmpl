@@ -26,14 +26,20 @@ export function DataProvider({ children }) {
 
   // Filtre les séances pour un groupe donné dans la semaine courante
   const getSeancesByGroupe = (groupeId) => {
-    return seances.filter(s => s.groupe_id === Number(groupeId) && s.semaine === currentWeek);
+    return seances.filter(s => {
+      const gIds = s.groupes_ids || (s.groupe_id ? [s.groupe_id] : []);
+      return gIds.includes(Number(groupeId)) && s.semaine === currentWeek;
+    });
   };
 
   // Filtre les séances pour un pôle donné dans la semaine courante
   const getSeancesByPole = (poleId) => {
     const pFiliereIds = filieres.filter(f => f.pole_id === Number(poleId)).map(f => f.id);
     const pGroupeIds = groupes.filter(g => pFiliereIds.includes(g.filiere_id)).map(g => g.id);
-    return seances.filter(s => pGroupeIds.includes(s.groupe_id) && s.semaine === currentWeek);
+    return seances.filter(s => {
+      const gIds = s.groupes_ids || (s.groupe_id ? [s.groupe_id] : []);
+      return gIds.some(id => pGroupeIds.includes(id)) && s.semaine === currentWeek;
+    });
   };
 
   // Filtre les séances pour un espace donné dans la semaine courante

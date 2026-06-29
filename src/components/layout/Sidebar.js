@@ -1,22 +1,23 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { FiCalendar, FiUsers, FiHome, FiUser, FiBook, FiGrid } from 'react-icons/fi';
+import { FiCalendar, FiUsers, FiHome, FiUser, FiBook, FiGrid, FiX } from 'react-icons/fi';
 
+// Éléments de navigation regroupés par section
 const navSections = [
   {
     label: 'PLANNING',
     items: [
-      { to: '/formateur/dashboard', icon: 'E', text: 'Emploi du temps' },
+      { to: '/formateur/dashboard', icon: FiCalendar, text: 'Emploi du temps' },
     ],
   },
   {
     label: 'RESSOURCES',
     items: [
-      { to: '/formateur/groupes',      icon: 'G', text: 'Groupes / Filières' },
-      { to: '/formateur/salles',       icon: 'S', text: 'Salles / Espaces' },
-      { to: '/formateur/formateurs',   icon: 'F', text: 'Formateurs' },
-      { to: '/formateur/modules',      icon: 'M', text: 'Modules' },
-      { to: '/formateur/affectations', icon: 'A', text: 'Affectations' },
+      { to: '/formateur/groupes', icon: FiUsers, text: 'Groupes / Filières' },
+      { to: '/formateur/salles', icon: FiHome, text: 'Salles / Espaces' },
+      { to: '/formateur/formateurs', icon: FiUser, text: 'Formateurs' },
+      { to: '/formateur/modules', icon: FiBook, text: 'Modules' },
+      { to: '/formateur/affectations', icon: FiGrid, text: 'Affectations' },
     ],
   },
 ];
@@ -24,19 +25,21 @@ const navSections = [
 const Sidebar = ({ isOpen, isCollapsed, onToggle, onCollapse }) => {
   return (
     <>
-      {/* Overlay mobile */}
+      {/* Overlay semi-transparent sur mobile quand la sidebar est ouverte */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300"
           onClick={onToggle}
         />
       )}
 
+      {/* Barre latérale */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-full flex flex-col
+          fixed top-0 left-0 z-50 h-full
           bg-slate-800 text-slate-400 border-r border-slate-700
           dark:bg-slate-900 dark:border-slate-800
+          flex flex-col
           transition-all duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
@@ -44,71 +47,80 @@ const Sidebar = ({ isOpen, isCollapsed, onToggle, onCollapse }) => {
           w-[260px]
         `}
       >
-        {/* Zone logo */}
-        <div className={`flex items-center h-[70px] border-b border-white/5 transition-all duration-300 ${isCollapsed ? 'lg:flex-col lg:justify-center lg:gap-4 lg:py-4' : 'px-6 gap-3.5'}`}>
-          {/* Badge G */}
-          <button onClick={onCollapse} className="hidden lg:flex items-center justify-center w-9 h-9 rounded-lg font-extrabold text-white bg-gradient-to-br from-sky-500 to-sky-700 shadow-sm shrink-0 cursor-pointer hover:opacity-90 transition-opacity">
-            G
+        {/* Zone du logo */}
+        <div className={`flex items-center h-16 px-5 ${isCollapsed ? 'lg:justify-center lg:px-0' : 'justify-between'}`}>
+          <button
+            onClick={onCollapse}
+            className="hidden lg:flex items-center gap-3 hover:opacity-80 transition-opacity duration-200 cursor-pointer"
+            aria-label="Toggle sidebar"
+          >
+            {/* Badge logo 'G' */}
+            <div className="bg-sky-500 w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-lg shadow-sky-500/30">
+              G
+            </div>
+            {!isCollapsed && (
+              <span className="text-white font-semibold text-lg tracking-wide whitespace-nowrap overflow-hidden">
+                GESEMPL
+              </span>
+            )}
           </button>
-          {/* Mobile badge */}
-          <div className="flex lg:hidden items-center justify-center w-9 h-9 rounded-lg font-extrabold text-white bg-gradient-to-br from-sky-500 to-sky-700 shadow-sm shrink-0">
-            G
+
+          {/* Logo pour mobile (non cliquable pour collapse) */}
+          <div className="flex lg:hidden items-center gap-3">
+            <div className="bg-sky-500 w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-lg shadow-sky-500/30">
+              G
+            </div>
+            <span className="text-white font-semibold text-lg tracking-wide">
+              GESEMPL
+            </span>
           </div>
 
-          {/* Titre */}
-          {!isCollapsed && (
-            <span className="font-extrabold text-[1.15rem] tracking-wider text-white hidden lg:block">GESEMPL</span>
-          )}
-          <span className="font-extrabold text-[1.15rem] tracking-wider text-white lg:hidden">GESEMPL</span>
-
-          {/* Bouton collapse desktop */}
-          {!isCollapsed && (
-            <button
-              onClick={onCollapse}
-              className="hidden lg:block ml-auto bg-transparent border-none text-slate-300 text-[1.2rem] cursor-pointer p-1 hover:text-white transition-colors"
-              title="Réduire"
-            >
-              ☰
-            </button>
-          )}
-
-          {/* Bouton fermer mobile */}
+          {/* Bouton fermer visible uniquement sur mobile */}
           <button
             onClick={onToggle}
-            className="text-slate-400 hover:text-white lg:hidden ml-auto transition-colors"
+            className="text-gray-400 hover:text-white lg:hidden transition-colors duration-200"
+            aria-label="Fermer le menu"
           >
-            ✕
+            <FiX size={20} />
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex flex-col gap-7 py-6 flex-1 overflow-y-auto">
+        {/* Liens de navigation */}
+        <nav className="flex-1 overflow-y-auto mt-4 space-y-6">
           {navSections.map((section) => (
-            <div key={section.label} className="flex flex-col">
+            <div key={section.label}>
+              {/* Titre de la section */}
               {!isCollapsed && (
-                <div className="text-[0.65rem] font-bold text-slate-500 uppercase tracking-widest px-6 mb-2.5 whitespace-nowrap overflow-hidden">
+                <p className="uppercase text-xs text-gray-500 tracking-wider font-medium px-6 mb-2 whitespace-nowrap overflow-hidden">
                   {section.label}
-                </div>
+                </p>
               )}
-              {isCollapsed && <div className="hidden lg:block w-8 h-px bg-slate-600 mx-auto mb-2" />}
+              {isCollapsed && (
+                <div className="hidden lg:block w-8 h-px bg-gray-600 mx-auto mb-2" />
+              )}
 
-              <ul className="space-y-0.5">
+              {/* Éléments de navigation */}
+              <ul className="space-y-1">
                 {section.items.map((item) => (
                   <li key={item.to}>
                     <NavLink
                       to={item.to}
                       title={isCollapsed ? item.text : undefined}
                       className={({ isActive }) =>
-                        `flex items-center py-3 text-slate-300 no-underline text-[0.95rem] font-medium transition-all duration-200 border-l-[3px] border-transparent hover:bg-white/5 hover:text-white hover:border-sky-500/50
-                        ${isCollapsed ? 'lg:px-3 lg:justify-center' : 'px-6 gap-3.5'}
-                        ${isActive ? 'text-white border-sky-500/50 bg-white/5' : ''}`
+                        `flex items-center gap-3 mx-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-[0.95rem] font-medium
+                        ${isCollapsed ? 'lg:justify-center lg:mx-2 lg:px-2' : ''}
+                        ${
+                          isActive
+                            ? 'bg-white/5 text-white border-l-2 border-sky-500/50'
+                            : 'text-slate-300 hover:text-white hover:bg-white/5 border-l-2 border-transparent hover:border-sky-500/50'
+                        }`
                       }
                     >
-                      <span className={`font-black text-slate-400 dark:text-slate-300 opacity-90 transition-all hover:scale-110 ${isCollapsed ? 'text-[1.4rem]' : 'text-[1.2rem]'}`}>
-                        {item.icon}
-                      </span>
+                      <item.icon size={18} className="flex-shrink-0" />
                       {!isCollapsed && (
-                        <span className="whitespace-nowrap overflow-hidden">{item.text}</span>
+                        <span className="whitespace-nowrap overflow-hidden">
+                          {item.text}
+                        </span>
                       )}
                     </NavLink>
                   </li>
