@@ -2,238 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ========================================
-   GESEMPL - Formateur Interface Styles
-   CMC Beni Mellal - OFPPT
-   ======================================== */
-
-/* Google Fonts Import */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
-/* ========================================
-   Base Styles
-   ======================================== */
-body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ===== Base Reset & Font ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-/* ========================================
-   Scrollbar Styles
-   ======================================== */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.4;
+}
+
+/* ===== Scrollbar ===== */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+  background: #e2e8f0;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #64748b;
 }
 
-/* ========================================
-   Custom Animations
-   ======================================== */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.dark ::-webkit-scrollbar-track {
+  background: #0f172a;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
 }
 
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-@keyframes floatBubble {
-  0%, 100% {
-    transform: translateY(0) scale(1);
-    opacity: 0.1;
-  }
-  50% {
-    transform: translateY(-30px) scale(1.1);
-    opacity: 0.2;
-  }
-}
-
-.animate-slide-in {
-  animation: slideIn 0.3s ease-out;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out;
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.2s ease-out;
-}
-
-/* ========================================
-   Schedule Grid Styles
-   ======================================== */
-.schedule-grid {
-  display: grid;
-  grid-template-columns: 100px repeat(4, 1fr);
-  gap: 1px;
-  background-color: #e2e8f0;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.schedule-grid .cell {
-  background-color: white;
-  min-height: 80px;
-  padding: 4px;
-  transition: background-color 0.15s ease;
-}
-
-.schedule-grid .cell:hover {
-  background-color: #f8fafc;
-}
-
-.schedule-grid .day-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 0.75rem;
-  color: #475569;
-  background-color: #f8fafc;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-}
-
-.schedule-grid .time-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 0.7rem;
-  color: #64748b;
-  background-color: #f8fafc;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 12px 8px;
-}
-
-/* ========================================
-   Session Card Hover Effects
-   ======================================== */
-.session-card {
-  transition: all 0.2s ease;
-  cursor: pointer;
-  position: relative;
-}
-
-.session-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.session-card .delete-btn {
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.session-card:hover .delete-btn {
-  opacity: 1;
-}
-
-/* ========================================
-   Login Page Background Circles
-   ======================================== */
-.login-bg-circle {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(14, 165, 233, 0.1);
-  animation: floatBubble 8s ease-in-out infinite;
-}
-
-.login-bg-circle:nth-child(1) {
-  width: 300px;
-  height: 300px;
-  top: -50px;
-  right: -50px;
-  animation-delay: 0s;
-}
-
-.login-bg-circle:nth-child(2) {
-  width: 200px;
-  height: 200px;
-  bottom: -30px;
-  left: -30px;
-  animation-delay: 2s;
-}
-
-.login-bg-circle:nth-child(3) {
-  width: 150px;
-  height: 150px;
-  top: 40%;
-  left: 20%;
-  animation-delay: 4s;
-}
-
-/* ========================================
-   Glass Effect
-   ======================================== */
-.glass {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-/* ========================================
-   Sidebar transition
-   ======================================== */
-.sidebar-transition {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ========================================
-   Print Styles
-   ======================================== */
+/* ===== Print Styles ===== */
 @media print {
+  body {
+    background: white !important;
+  }
+
   .no-print {
     display: none !important;
-  }
-  
-  body {
-    background: white;
-  }
-  
-  .schedule-grid {
-    border: 1px solid #000;
   }
 }

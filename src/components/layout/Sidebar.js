@@ -7,17 +7,17 @@ const navSections = [
   {
     label: 'PLANNING',
     items: [
-      { to: '/dashboard', icon: FiCalendar, text: 'Emploi du temps' },
+      { to: '/formateur/dashboard', icon: FiCalendar, text: 'Emploi du temps' },
     ],
   },
   {
     label: 'RESSOURCES',
     items: [
-      { to: '/groupes', icon: FiUsers, text: 'Groupes / Filières' },
-      { to: '/salles', icon: FiHome, text: 'Salles / Espaces' },
-      { to: '/formateurs', icon: FiUser, text: 'Formateurs' },
-      { to: '/modules', icon: FiBook, text: 'Modules' },
-      { to: '/affectations', icon: FiGrid, text: 'Affectations' },
+      { to: '/formateur/groupes', icon: FiUsers, text: 'Groupes / Filières' },
+      { to: '/formateur/salles', icon: FiHome, text: 'Salles / Espaces' },
+      { to: '/formateur/formateurs', icon: FiUser, text: 'Formateurs' },
+      { to: '/formateur/modules', icon: FiBook, text: 'Modules' },
+      { to: '/formateur/affectations', icon: FiGrid, text: 'Affectations' },
     ],
   },
 ];
@@ -37,13 +37,13 @@ const Sidebar = ({ isOpen, isCollapsed, onToggle, onCollapse }) => {
       <aside
         className={`
           fixed top-0 left-0 z-50 h-full
-          bg-gradient-to-b from-[#1a2332] to-[#0f1923]
-          dark:from-[#0d1117] dark:to-[#010409]
+          bg-slate-800 text-slate-400 border-r border-slate-700
+          dark:bg-slate-900 dark:border-slate-800
           flex flex-col
           transition-all duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
-          ${isCollapsed ? 'lg:w-[72px]' : 'lg:w-[260px]'}
+          ${isCollapsed ? 'lg:w-[84px]' : 'lg:w-[260px]'}
           w-[260px]
         `}
       >
@@ -107,12 +107,12 @@ const Sidebar = ({ isOpen, isCollapsed, onToggle, onCollapse }) => {
                       to={item.to}
                       title={isCollapsed ? item.text : undefined}
                       className={({ isActive }) =>
-                        `flex items-center gap-3 mx-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium
+                        `flex items-center gap-3 mx-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-[0.95rem] font-medium
                         ${isCollapsed ? 'lg:justify-center lg:mx-2 lg:px-2' : ''}
                         ${
                           isActive
-                            ? 'bg-white/10 text-white border-l-2 border-sky-400'
-                            : 'text-gray-400 hover:text-white hover:bg-white/5 border-l-2 border-transparent'
+                            ? 'bg-white/5 text-white border-l-2 border-sky-500/50'
+                            : 'text-slate-300 hover:text-white hover:bg-white/5 border-l-2 border-transparent hover:border-sky-500/50'
                         }`
                       }
                     >

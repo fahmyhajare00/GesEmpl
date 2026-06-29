@@ -99,9 +99,9 @@ const Header = ({ onMenuToggle }) => {
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-700/50 shadow-sm transition-colors duration-300">
+    <header className="sticky top-0 z-30 h-[70px] bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm dark:bg-slate-900/95 dark:border-slate-800 transition-colors duration-300 flex flex-col justify-center">
       <div className="flex items-center justify-between h-16 px-4 sm:px-6">
-        {/* Côté gauche : bouton hamburger et logo */}
+        {/* Côté gauche : bouton hamburger */}
         <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={onMenuToggle}
@@ -110,11 +110,6 @@ const Header = ({ onMenuToggle }) => {
           >
             <FiMenu size={22} />
           </button>
-          <img 
-            src="/logo.png" 
-            alt="CMC Logo" 
-            className="h-10 sm:h-14 object-contain bg-white rounded p-1.5 shadow-sm" 
-          />
         </div>
 
         {/* Côté droit : actions */}

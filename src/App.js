@@ -16,11 +16,12 @@ function App() {
       <DataProvider>
         <Router>
           <Routes>
-            {/* Redirection automatique vers dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Redirection automatique vers dashboard formateur */}
+            <Route path="/" element={<Navigate to="/formateur/dashboard" replace />} />
             
-            {/* Routes de l'application (auth retirée pour le groupe backend) */}
-            <Route path="/" element={<Layout />}>
+            {/* Routes de l'espace formateur */}
+            <Route path="/formateur" element={<Layout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="groupes" element={<GroupesFilieresPage />} />
               <Route path="salles" element={<SallesEspacesPage />} />
@@ -30,7 +31,7 @@ function App() {
             </Route>
 
             {/* Redirection pour les routes inconnues */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/formateur/dashboard" replace />} />
           </Routes>
         </Router>
       </DataProvider>

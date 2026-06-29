@@ -25,7 +25,7 @@ const Layout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 transition-colors duration-300">
       {/* Barre latérale de navigation */}
       <Sidebar
         isOpen={sidebarOpen}
@@ -44,7 +44,7 @@ const Layout = () => {
         <Header onMenuToggle={handleMenuToggle} />
 
         {/* Contenu de la page enfant (via le routeur) */}
-        <main className="p-6 bg-gray-50 dark:bg-gray-950 min-h-screen transition-colors duration-300">
+        <main className="p-6 bg-slate-100 dark:bg-slate-900 min-h-screen transition-colors duration-300">
           <Outlet />
         </main>
       </div>

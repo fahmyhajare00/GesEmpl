@@ -1,31 +1,70 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: 'class',
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       colors: {
+        brand: {
+          light: '#dbeafe',
+          DEFAULT: '#2563eb',
+          hover: '#1d4ed8',
+        },
+        danger: '#ef4444',
+        presentiel: {
+          bg: '#dcfce7',
+          text: '#166534',
+          darkBg: '#064e3b',
+          darkText: '#34d399',
+          border: '#6ee7b7',
+          accent: '#059669',
+          gradFrom: '#ecfdf5',
+          gradTo: '#d1fae5',
+          darkGradFrom: '#064e3b',
+          darkGradTo: '#065f46',
+        },
+        distanciel: {
+          bg: '#c8e7ec',
+          text: '#07515e',
+          darkBg: '#1e3a8a',
+          darkText: '#60a5fa',
+          border: '#407e89',
+          accent: '#033d47',
+          darkGradFrom: '#1e3a8a',
+          darkGradTo: '#1d4ed8',
+        },
+        // Keeping local navy from previous setup to avoid breaking current components that rely on it
         navy: {
           900: '#0f1923',
           800: '#1a2332',
           700: '#243044',
         },
       },
-      animation: {
-        'float': 'float 6s ease-in-out infinite',
-        'float-delay': 'float 8s ease-in-out 2s infinite',
-        'pulse-slow': 'pulse 3s ease-in-out infinite',
-      },
       keyframes: {
+        fadeIn: {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+        slideUp: {
+          from: { opacity: '0', transform: 'translateY(20px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-20px)' },
         },
+      },
+      animation: {
+        fadeIn: 'fadeIn 0.2s ease-in-out',
+        slideUp: 'slideUp 0.2s ease-in-out',
+        'float': 'float 6s ease-in-out infinite',
+        'float-delay': 'float 8s ease-in-out 2s infinite',
+        'pulse-slow': 'pulse 3s ease-in-out infinite',
       },
     },
   },
