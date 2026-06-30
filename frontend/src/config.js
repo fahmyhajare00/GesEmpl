@@ -5,6 +5,7 @@ export const defaultConfig = {
   poles: ['DIA', 'GC'],
   filieres: ['DevoWFS', 'DevoMobile', 'GE', 'Comtapilite'],
   annees: ['1ère année', '2ème année'],
+  groupes: ['Groupe 1', 'Groupe 2', 'Groupe 3', 'Groupe 4'],
   timeSlots: ['8h30 - 11h', '11h - 13h30', '13h30 - 16h', '16h - 18h30'],
   activeDays: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
   sessionDuration: 2.5,

@@ -74,6 +74,13 @@ const scheduleSlice = createSlice({
         saveSessions(state.sessions);
       }
     },
+    rejectSession: (state, action) => {
+      const session = state.sessions.find(s => s.id === action.payload);
+      if (session) {
+        session.status = 'refusee';
+        saveSessions(state.sessions);
+      }
+    },
     updateConfig: (state, action) => {
       state.config = { ...state.config, ...action.payload };
       saveConfig(state.config);
@@ -92,13 +99,14 @@ const scheduleSlice = createSlice({
         saveConfig(state.config);
       }
     },
+    setStoreData: (state, action) => {
+      state.config = action.payload.config;
+      state.sessions = action.payload.sessions;
+    },
   }
 });
 
-export const {
-  addSession, removeSession, moveSession, acceptSession,
-  updateConfig, addToConfig, removeFromConfig
-} = scheduleSlice.actions;
+export const { addSession, removeSession, moveSession, acceptSession, rejectSession, updateConfig, addToConfig, removeFromConfig, setStoreData } = scheduleSlice.actions;
 
 export const store = configureStore({
   reducer: { schedule: scheduleSlice.reducer },

@@ -1,20 +1,31 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addSession, removeSession, moveSession, acceptSession, updateConfig, addToConfig, removeFromConfig } from '../store';
+import { addSession, removeSession, moveSession, acceptSession, rejectSession, updateConfig, addToConfig, removeFromConfig } from '../store';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { useSearchParams } from 'react-router-dom';
 import '../index.css';
 
-const Schedule = () => {
+const Schedule = ({ fixedFormateur, initialFormateur, fixedGroupe, fixedPole, hideFilters, hideStats, readOnly, formateurMode, formateurGroupView, myName }) => {
   const { user, sessions, config } = useSelector(state => state.schedule);
   const dispatch = useDispatch();
-  const [filterPole, setFilterPole] = useState('all');
-  const [filterFormateur, setFilterFormateur] = useState('all');
+  const [searchParams] = useSearchParams();
+  const initialPole = searchParams.get('pole') || fixedPole || '';
+  const [filterPole, setFilterPole] = useState(initialPole);
+
+  useEffect(() => {
+    if (config?.poles?.length > 0 && !filterPole && !fixedPole) {
+      setFilterPole(config.poles[0]);
+    }
+  }, [config, filterPole, fixedPole]);
+  
+  const [filterFormateur, setFilterFormateur] = useState(fixedFormateur || initialFormateur || 'all');
   const [filterSalle, setFilterSalle] = useState('all');
   const [filterModule, setFilterModule] = useState('all');
   const [filterAnnee, setFilterAnnee] = useState('all');
   const [filterDate, setFilterDate] = useState('');
   const [filterFiliere, setFilterFiliere] = useState('all');
+  const [filterGroupe, setFilterGroupe] = useState(fixedGroupe || 'all');
   const [currentWeek, setCurrentWeek] = useState(() => {
     const today = new Date();
     return getWeekRange(today);
@@ -26,7 +37,7 @@ const Schedule = () => {
   const [editingSession, setEditingSession] = useState(null);
   const [formData, setFormData] = useState({ 
     module: '', formateur: '', salle: '',lien: '', pole: 'Digital', type: 'presentiel',
-    annee: '', filiere: '', date: ''
+    annee: '', filiere: '', groupe: '', date: ''
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState('ressources');
@@ -95,11 +106,31 @@ const Schedule = () => {
     return d.toISOString().split('T')[0];
   }, [currentWeek]);
 
+  const myGroups = useMemo(() => {
+    if (!myName) return [];
+    return [...new Set(sessions.filter(s => s.formateur === myName && s.groupe).map(s => s.groupe))];
+  }, [sessions, myName]);
+
   const filteredSessions = useMemo(() => {
     return sessions.filter(s => {
-      if (s.status === 'pending') return false;
+      // Hide unapproved/refused sessions EXCEPT on the Formateur's personal view
+      if (!formateurMode && (s.status === 'pending' || s.status === 'en_attente' || s.status === 'refusee')) return false;
+      
       // Filtre par semaine affichée
       if (s.weekKey && s.weekKey !== currentWeekKey) return false;
+
+      // Logique pour formateurMode
+      if (formateurMode) {
+        // Le formateur voit UNIQUEMENT ses propres séances
+        return s.formateur === myName;
+      }
+
+      // Logique pour formateurGroupView
+      if (formateurGroupView) {
+        // Le formateur voit UNIQUEMENT les séances de ses groupes
+        return s.groupe && myGroups.includes(s.groupe);
+      }
+
       const mP = filterPole === 'all' || s.pole === filterPole;
       const mF = filterFormateur === 'all' || s.formateur === filterFormateur;
       const mS = filterSalle === 'all' || s.salle === filterSalle;
@@ -107,11 +138,14 @@ const Schedule = () => {
       const mAnnee = filterAnnee === 'all' || s.annee === filterAnnee;
       const mDate = !filterDate || s.date === filterDate;
       const mFiliere = filterFiliere === 'all' || s.filiere === filterFiliere;
-      return mP && mF && mS && mModule && mAnnee && mDate && mFiliere;
+      const mGroupe = filterGroupe === 'all' || s.groupe === filterGroupe;
+      return mP && mF && mS && mModule && mAnnee && mDate && mFiliere && mGroupe;
     });
-  }, [sessions, currentWeekKey, filterPole, filterFormateur, filterSalle, filterModule, filterAnnee, filterDate, filterFiliere]);
+  }, [sessions, currentWeekKey, filterPole, filterFormateur, filterSalle, filterModule, filterAnnee, filterDate, filterFiliere, filterGroupe]);
 
-  const pendingSessions = useMemo(() => sessions.filter(s => s.status === 'pending'), [sessions]);
+  const pendingSessions = useMemo(() => {
+    return sessions.filter(s => s.status === 'en_attente' && (filterPole === 'all' || s.pole === filterPole));
+  }, [sessions, filterPole]);
 
   // --- CALCUL DU TOTAL DES HEURES ---
   const totalHeures = useMemo(() => {
@@ -121,11 +155,25 @@ const Schedule = () => {
   const totalPresentiel = useMemo(() => filteredSessions.filter(s => s.type === 'presentiel').length, [filteredSessions]);
   const totalDistanciel = useMemo(() => filteredSessions.filter(s => s.type === 'distanciel').length, [filteredSessions]);
 
-  const listFormateurs = config.formateurs;
-  const listSalles = config.salles;
-  const listModules = [...new Set(sessions.map(s => s.module))];
-  const listAnnees = config.annees;
-  const listFilieres = config.filieres;
+  // Génération dynamique des listes en fonction du pôle sélectionné
+  const getFilteredList = (list) => {
+    if (!list) return [];
+    return list
+      .filter(item => {
+        if (typeof item === 'string') return true;
+        if (filterPole === 'all' || !filterPole) return true;
+        if (!item.pole) return true; // Ne pas cacher si le pôle est inconnu
+        return item.pole === filterPole;
+      })
+      .map(item => typeof item === 'string' ? item : item.nom);
+  };
+
+  const listFormateurs = getFilteredList(config.formateurs);
+  const listSalles = getFilteredList(config.salles);
+  const listModules = config.modules ? getFilteredList(config.modules) : [...new Set(sessions.map(s => s.module))];
+  const listAnnees = getFilteredList(config.annees || []);
+  const listFilieres = getFilteredList(config.filieres);
+  const listGroupes = getFilteredList(config.groupes);
   const timeSlots = config.timeSlots || [];
 
   // --- STATS DYNAMIQUES DASHBOARD ---
@@ -138,8 +186,8 @@ const Schedule = () => {
     setEditingSession(null);
     setActiveCell(day !== null ? { day, slotIdx } : null);
     setFormData({ 
-      module: '', formateur: '', salle: '', pole: 'DIA', type: 'presentiel',
-      annee: '', filiere: '', date: '',
+      module: '', formateur: formateurMode ? fixedFormateur : '', salle: '', pole: (filterPole && filterPole !== 'all') ? filterPole : (config.poles?.[0] || 'DIA'), type: 'presentiel',
+      annee: '', filiere: '', groupe: '', date: '',
       day: day || config.activeDays[0] || 'Lundi',
       slotIdx: slotIdx !== null ? slotIdx : 0
     });
@@ -181,10 +229,15 @@ const Schedule = () => {
 
     if (editingSession) {
       dispatch(removeSession(editingSession.id));
-      dispatch(addSession({ ...formData, day: targetDay, slotIdx: targetSlotIdx, id: editingSession.id, weekKey: currentWeekKey }));
+      dispatch(addSession({ ...formData, day: targetDay, slotIdx: targetSlotIdx, id: editingSession.id, weekKey: currentWeekKey, status: formateurMode ? 'en_attente' : 'validee' }));
     } else {
-      dispatch(addSession({ ...formData, day: targetDay, slotIdx: targetSlotIdx, id: Date.now(), weekKey: currentWeekKey }));
+      dispatch(addSession({ ...formData, day: targetDay, slotIdx: targetSlotIdx, id: Date.now(), weekKey: currentWeekKey, status: formateurMode ? 'en_attente' : 'validee' }));
     }
+    
+    if (formateurMode) {
+      alert("Votre demande de séance a été envoyée au Chef de Pôle. Elle est maintenant en attente de validation.");
+    }
+    
     handleClose();
   };
 
@@ -196,6 +249,7 @@ const Schedule = () => {
     setFilterAnnee('all');
     setFilterDate('');
     setFilterFiliere('all');
+    setFilterGroupe('all');
   };
 
   const handleExportPDF = async () => {
@@ -236,77 +290,122 @@ const Schedule = () => {
     return today >= start && today <= end;
   }, [currentWeek]);
 
+  const getOptionValue = (item) => typeof item === 'object' && item !== null ? (item.nom || item.pole || JSON.stringify(item)) : item;
+
   return (
     <div className="app-container">
-      <section className="flex gap-4 mb-5">
-        <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl p-6 flex flex-col justify-center shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-t-sky-500">
-          <div className="text-[2.5rem] font-extrabold bg-gradient-to-br from-sky-500 to-sky-700 bg-clip-text text-transparent leading-none mb-2">{totalFormateursPole}</div>
-          <div className="text-[0.85rem] text-slate-500 dark:text-slate-400 font-medium">Formateurs actifs</div>
-        </div>
-        <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl p-6 flex flex-col justify-center shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-t-sky-500">
-          <div className="text-[2.5rem] font-extrabold bg-gradient-to-br from-sky-500 to-sky-700 bg-clip-text text-transparent leading-none mb-2">{totalSeancesSemaine}</div>
-          <div className="text-[0.85rem] text-slate-500 dark:text-slate-400 font-medium">Séances cette semaine</div>
-        </div>
-        <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl p-6 flex flex-col justify-center shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-t-sky-500">
-          <div className="text-[2.5rem] font-extrabold bg-gradient-to-br from-sky-500 to-sky-700 bg-clip-text text-transparent leading-none mb-2">{totalSallesPole}</div>
-          <div className="text-[0.85rem] text-slate-500 dark:text-slate-400 font-medium">Salles utilisées</div>
-        </div>
-        <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl p-6 flex flex-col justify-center shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer" style={{ borderTopColor: pendingSessions.length > 0 ? '#f59e0b' : 'var(--border-color)' }} onClick={() => setIsPendingModalOpen(true)}>
-          <div className="text-[2.5rem] font-extrabold leading-none mb-2" style={{ color: pendingSessions.length > 0 ? '#f59e0b' : 'transparent', backgroundClip: 'text', WebkitBackgroundClip: 'text', backgroundImage: pendingSessions.length === 0 ? 'linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%)' : 'none' }}>{pendingSessions.length}</div>
-          <div className="text-[0.85rem] text-slate-500 dark:text-slate-400 font-medium">Séances à accepter</div>
-        </div>
-      </section>
+      {!hideStats && (
+        <section className="flex gap-4 mb-5">
+          {formateurMode || formateurGroupView ? (
+            <>
+              <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl p-6 flex flex-col justify-center shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-t-emerald-500">
+                <div className="text-[2.5rem] font-extrabold bg-gradient-to-br from-emerald-500 to-emerald-700 bg-clip-text text-transparent leading-none mb-2">{myGroups.length}</div>
+                <div className="text-[0.85rem] text-slate-500 dark:text-slate-400 font-medium">Groupes enseignés</div>
+              </div>
+              <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl p-6 flex flex-col justify-center shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-t-sky-500">
+                <div className="text-[2.5rem] font-extrabold bg-gradient-to-br from-sky-500 to-sky-700 bg-clip-text text-transparent leading-none mb-2">{totalSeancesSemaine}</div>
+                <div className="text-[0.85rem] text-slate-500 dark:text-slate-400 font-medium">Séances cette semaine</div>
+              </div>
+              <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl p-6 flex flex-col justify-center shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-t-indigo-500">
+                <div className="text-[2.5rem] font-extrabold bg-gradient-to-br from-indigo-500 to-indigo-700 bg-clip-text text-transparent leading-none mb-2">{totalHeures}h</div>
+                <div className="text-[0.85rem] text-slate-500 dark:text-slate-400 font-medium">Heures de cours</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl p-6 flex flex-col justify-center shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-t-sky-500">
+                <div className="text-[2.5rem] font-extrabold bg-gradient-to-br from-sky-500 to-sky-700 bg-clip-text text-transparent leading-none mb-2">{totalFormateursPole}</div>
+                <div className="text-[0.85rem] text-slate-500 dark:text-slate-400 font-medium">Formateurs actifs</div>
+              </div>
+              <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl p-6 flex flex-col justify-center shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-t-sky-500">
+                <div className="text-[2.5rem] font-extrabold bg-gradient-to-br from-sky-500 to-sky-700 bg-clip-text text-transparent leading-none mb-2">{totalSeancesSemaine}</div>
+                <div className="text-[0.85rem] text-slate-500 dark:text-slate-400 font-medium">Séances cette semaine</div>
+              </div>
+              <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl p-6 flex flex-col justify-center shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-t-sky-500">
+                <div className="text-[2.5rem] font-extrabold bg-gradient-to-br from-sky-500 to-sky-700 bg-clip-text text-transparent leading-none mb-2">{totalSallesPole}</div>
+                <div className="text-[0.85rem] text-slate-500 dark:text-slate-400 font-medium">Salles utilisées</div>
+              </div>
+              <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl p-6 flex flex-col justify-center shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer" style={{ borderTopColor: pendingSessions.length > 0 ? '#f59e0b' : 'var(--border-color)' }} onClick={() => setIsPendingModalOpen(true)}>
+                <div className="text-[2.5rem] font-extrabold leading-none mb-2" style={{ color: pendingSessions.length > 0 ? '#f59e0b' : 'transparent', backgroundClip: 'text', WebkitBackgroundClip: 'text', backgroundImage: pendingSessions.length === 0 ? 'linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%)' : 'none' }}>{pendingSessions.length}</div>
+                <div className="text-[0.85rem] text-slate-500 dark:text-slate-400 font-medium">Séances à accepter</div>
+              </div>
+            </>
+          )}
+        </section>
+      )}
 
-      <section className="bg-white/95 backdrop-blur-md rounded-xl p-3 px-4 mb-3 shadow-sm border border-slate-200 dark:bg-slate-800/95 dark:border-slate-700">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-nowrap gap-3 w-full overflow-x-auto pb-2">
-            <div className="flex-1 min-w-[130px] flex flex-col gap-1">
-              <label className="text-[0.55rem] font-bold text-slate-500 uppercase tracking-wide">Pôle</label>
-              <select className="px-2 py-1 rounded border border-slate-200 bg-white text-[0.7rem] text-slate-900 outline-none cursor-pointer transition-colors hover:border-sky-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={filterPole} onChange={(e) => setFilterPole(e.target.value)}>
-                <option value="all">Tous les pôles</option>
-                {config.poles.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
+      {!hideFilters && (
+        <section className="bg-white/95 backdrop-blur-md rounded-xl p-3 px-4 mb-3 shadow-sm border border-slate-200 dark:bg-slate-800/95 dark:border-slate-700">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex flex-nowrap gap-2 w-full overflow-x-auto pb-2">
+            {!formateurGroupView && (
+              <>
+                <div className="flex-1 min-w-[90px] flex flex-col gap-0.5 opacity-70 pointer-events-none">
+                  <label className="text-[0.55rem] font-bold text-slate-500 uppercase tracking-wide">Pôle Actuel</label>
+                  <select className="px-1.5 py-1 rounded border border-slate-200 bg-white text-[0.65rem] text-slate-900 outline-none cursor-pointer transition-colors hover:border-sky-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={filterPole} onChange={(e) => setFilterPole(e.target.value)}>
+                    {config.poles && config.poles.map(p => {
+                      const pVal = getOptionValue(p);
+                      return <option key={pVal} value={pVal}>{pVal}</option>;
+                    })}
+                  </select>
+                </div>
+                
+                <div className="flex-1 min-w-[90px] flex flex-col gap-0.5">
+                  <label className="text-[0.55rem] font-bold text-slate-500 uppercase tracking-wide">Module</label>
+                  <select className="px-1.5 py-1 rounded border border-slate-200 bg-white text-[0.65rem] text-slate-900 outline-none cursor-pointer transition-colors hover:border-sky-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={filterModule} onChange={(e) => setFilterModule(e.target.value)}>
+                    <option value="all">Tous les modules</option>
+                    {listModules.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+                
+                <div className="flex-1 min-w-[90px] flex flex-col gap-0.5">
+                  <label className="text-[0.55rem] font-bold text-slate-500 uppercase tracking-wide">Année</label>
+                  <select className="px-1.5 py-1 rounded border border-slate-200 bg-white text-[0.65rem] text-slate-900 outline-none cursor-pointer transition-colors hover:border-sky-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={filterAnnee} onChange={(e) => setFilterAnnee(e.target.value)}>
+                    <option value="all">Toutes les années</option>
+                    {listAnnees.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+                
+                <div className="flex-1 min-w-[90px] flex flex-col gap-0.5">
+                  <label className="text-[0.55rem] font-bold text-slate-500 uppercase tracking-wide">Filière</label>
+                  <select className="px-1.5 py-1 rounded border border-slate-200 bg-white text-[0.65rem] text-slate-900 outline-none cursor-pointer transition-colors hover:border-sky-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={filterFiliere} onChange={(e) => setFilterFiliere(e.target.value)}>
+                    <option value="all">Toutes les filières</option>
+                    {listFilieres.map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                </div>
+              </>
+            )}
             
-            <div className="flex-1 min-w-[140px] flex flex-col gap-1">
-              <label className="text-[0.55rem] font-bold text-slate-500 uppercase tracking-wide">Module</label>
-              <select className="px-2 py-1 rounded border border-slate-200 bg-white text-[0.7rem] text-slate-900 outline-none cursor-pointer transition-colors hover:border-sky-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={filterModule} onChange={(e) => setFilterModule(e.target.value)}>
-                <option value="all">Tous les modules</option>
-                {listModules.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
+            {/* Groupe */}
+            {!fixedGroupe && (
+              <div className="flex-1 min-w-[90px] flex flex-col gap-0.5">
+                <label className="text-[0.55rem] font-bold text-slate-500 uppercase tracking-wide">Groupe</label>
+                <select className="px-1.5 py-1 rounded border border-slate-200 bg-white text-[0.65rem] text-slate-900 outline-none cursor-pointer transition-colors hover:border-sky-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={filterGroupe} onChange={(e) => setFilterGroupe(e.target.value)}>
+                  <option value="all">Tous les groupes</option>
+                  {(formateurGroupView ? myGroups : listGroupes).map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+            )}
             
-            <div className="flex-1 min-w-[140px] flex flex-col gap-1">
-              <label className="text-[0.55rem] font-bold text-slate-500 uppercase tracking-wide">Année</label>
-              <select className="px-2 py-1 rounded border border-slate-200 bg-white text-[0.7rem] text-slate-900 outline-none cursor-pointer transition-colors hover:border-sky-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={filterAnnee} onChange={(e) => setFilterAnnee(e.target.value)}>
-                <option value="all">Toutes les années</option>
-                {listAnnees.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
-            
-            <div className="flex-1 min-w-[140px] flex flex-col gap-1">
-              <label className="text-[0.55rem] font-bold text-slate-500 uppercase tracking-wide">Filière</label>
-              <select className="px-2 py-1 rounded border border-slate-200 bg-white text-[0.7rem] text-slate-900 outline-none cursor-pointer transition-colors hover:border-sky-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={filterFiliere} onChange={(e) => setFilterFiliere(e.target.value)}>
-                <option value="all">Toutes les filières</option>
-                {listFilieres.map(f => <option key={f} value={f}>{f}</option>)}
-              </select>
-            </div>
-            
-            <div className="flex-1 min-w-[150px] flex flex-col gap-1">
-              <label className="text-[0.55rem] font-bold text-slate-500 uppercase tracking-wide">Formateur</label>
-              <select className="px-2 py-1 rounded border border-slate-200 bg-white text-[0.7rem] text-slate-900 outline-none cursor-pointer transition-colors hover:border-sky-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={filterFormateur} onChange={(e) => setFilterFormateur(e.target.value)}>
-                <option value="all">Tous les formateurs</option>
-                {listFormateurs.map(f => <option key={f} value={f}>{f}</option>)}
-              </select>
-            </div>
+            {!formateurGroupView && (
+              <>
+                <div className="flex-1 min-w-[100px] flex flex-col gap-0.5">
+                  <label className="text-[0.55rem] font-bold text-slate-500 uppercase tracking-wide">Formateur</label>
+                  <select className="px-1.5 py-1 rounded border border-slate-200 bg-white text-[0.65rem] text-slate-900 outline-none cursor-pointer transition-colors hover:border-sky-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={filterFormateur} onChange={(e) => setFilterFormateur(e.target.value)}>
+                    <option value="all">Tous les formateurs</option>
+                    {listFormateurs.map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                </div>
 
-            <div className="flex-1 min-w-[140px] flex flex-col gap-1">
-              <label className="text-[0.55rem] font-bold text-slate-500 uppercase tracking-wide">Salle</label>
-              <select className="px-2 py-1 rounded border border-slate-200 bg-white text-[0.7rem] text-slate-900 outline-none cursor-pointer transition-colors hover:border-sky-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={filterSalle} onChange={(e) => setFilterSalle(e.target.value)}>
-                <option value="all">Toutes les salles</option>
-                {listSalles.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
+                <div className="flex-1 min-w-[90px] flex flex-col gap-0.5">
+                  <label className="text-[0.55rem] font-bold text-slate-500 uppercase tracking-wide">Salle</label>
+                  <select className="px-1.5 py-1 rounded border border-slate-200 bg-white text-[0.65rem] text-slate-900 outline-none cursor-pointer transition-colors hover:border-sky-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={filterSalle} onChange={(e) => setFilterSalle(e.target.value)}>
+                    <option value="all">Toutes les salles</option>
+                    {listSalles.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </>
+            )}
           </div>
           
           <div className="flex items-center justify-center w-full gap-3 mt-2">
@@ -327,12 +426,15 @@ const Schedule = () => {
               ⬇ PDF
             </button>
 
-            <button className="inline-flex items-center gap-1.5 bg-gradient-to-br from-sky-400 to-blue-700 text-white border-none px-3.5 py-2 rounded-lg text-[0.85rem] font-semibold cursor-pointer transition-all shadow-[0_4px_10px_rgba(37,99,235,0.25)] hover:bg-gradient-to-br hover:from-blue-700 hover:to-blue-800 hover:-translate-y-0.5 hover:shadow-[0_6px_14px_rgba(37,99,235,0.35)] active:translate-y-0 active:shadow-[0_3px_8px_rgba(37,99,235,0.25)] focus:outline-none focus:ring-2 focus:ring-blue-500/30" onClick={() => handleOpenAdd()}>
-              + Nouvelle séance
-            </button>
+            {!readOnly && (
+              <button className="inline-flex items-center gap-1.5 bg-gradient-to-br from-sky-400 to-blue-700 text-white border-none px-3.5 py-2 rounded-lg text-[0.85rem] font-semibold cursor-pointer transition-all shadow-[0_4px_10px_rgba(37,99,235,0.25)] hover:bg-gradient-to-br hover:from-blue-700 hover:to-blue-800 hover:-translate-y-0.5 hover:shadow-[0_6px_14px_rgba(37,99,235,0.35)] active:translate-y-0 active:shadow-[0_3px_8px_rgba(37,99,235,0.25)] focus:outline-none focus:ring-2 focus:ring-blue-500/30" onClick={() => handleOpenAdd()}>
+                + Nouvelle séance
+              </button>
+            )}
           </div>
         </div>
       </section>
+      )}
 
       <section className="bg-white/95 backdrop-blur-md rounded-xl p-2 px-4 mb-4 shadow-sm border border-slate-200 flex items-center justify-between dark:bg-slate-800 dark:border-slate-700">
         <div className="flex items-center gap-2">
@@ -378,7 +480,7 @@ const Schedule = () => {
                   {timeSlots.map((slot, sIdx) => {
                     const cellSessions = filteredSessions.filter(s => s.day === weekDay.day && s.slotIdx === sIdx);
                     return (
-                      <td key={sIdx} className="h-[85px] border border-slate-100 relative p-[3px] transition-colors bg-white hover:bg-sky-50 hover:border-sky-200 cursor-pointer hover:shadow-[inset_0_0_0_1px_#bae6fd] group align-top dark:bg-transparent dark:border-slate-700 dark:hover:bg-slate-800/50" onClick={() => handleOpenAdd(weekDay.day, sIdx)} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, weekDay.day, sIdx)}>
+                      <td key={sIdx} className={`h-[85px] border border-slate-100 relative p-[3px] transition-colors bg-white ${!readOnly ? 'hover:bg-sky-50 hover:border-sky-200 cursor-pointer hover:shadow-[inset_0_0_0_1px_#bae6fd]' : ''} group align-top dark:bg-transparent dark:border-slate-700 dark:hover:bg-slate-800/50`} onClick={() => !readOnly && handleOpenAdd(weekDay.day, sIdx)} onDragOver={(e) => !readOnly && !formateurMode && handleDragOver(e)} onDrop={(e) => !readOnly && !formateurMode && handleDrop(e, weekDay.day, sIdx)}>
                         <div className={cellSessions.length > 1 ? "grid grid-cols-2 gap-[4px] h-full" : "flex flex-col gap-[2px] h-full min-h-[60px]"} data-count={cellSessions.length}>
                           {cellSessions.map(s => {
                             const isCompact = cellSessions.length > 1;
@@ -391,12 +493,13 @@ const Schedule = () => {
                             const hideFooter = isCompact;
 
                             return (
-                              <div key={s.id} className={`relative rounded-lg cursor-grab transition-all duration-300 ease-out shadow-sm border flex-shrink-0 overflow-hidden hover:shadow-md hover:-translate-y-1 active:cursor-grabbing active:scale-95 group/card ${paddingClass} ${
+                              <div key={s.id} className={`relative rounded-lg cursor-grab transition-all duration-300 ease-out shadow-sm border flex-shrink-0 overflow-hidden hover:shadow-md hover:-translate-y-1 ${!readOnly && !formateurMode && 'active:cursor-grabbing active:scale-95'} group/card ${paddingClass} ${
                                 s.type === 'presentiel'
                                   ? `bg-gradient-to-br from-emerald-50 to-green-100 border-emerald-200 ${borderLeftClass} border-l-emerald-500 dark:from-emerald-950 dark:to-emerald-900 dark:border-emerald-800 dark:border-l-emerald-400`
                                   : `bg-gradient-to-br from-cyan-50 to-blue-100 border-cyan-200 ${borderLeftClass} border-l-cyan-600 dark:from-slate-800 dark:to-blue-950 dark:border-blue-900 dark:border-l-blue-400`
-                              }`} draggable onDragStart={(e) => handleDragStart(e, s.id)} onClick={(e) => handleOpenEdit(e, s)}>
-                                
+                              } ${s.status === 'en_attente' ? 'opacity-60 border-dashed border-2 border-amber-400' : ''} ${s.status === 'refusee' ? 'opacity-60 bg-red-50 border-red-500 dark:bg-red-900/20' : ''}`} draggable={!readOnly && !formateurMode} onDragStart={(e) => !readOnly && !formateurMode && handleDragStart(e, s.id)} onClick={(e) => !readOnly && !formateurMode && handleOpenEdit(e, s)}>
+                                {s.status === 'en_attente' && <div className="absolute top-1 left-1 bg-amber-500 text-white text-[0.5rem] font-bold px-1 py-0.5 rounded-sm shadow-sm z-20">En attente</div>}
+                                {s.status === 'refusee' && <div className="absolute top-1 left-1 bg-red-500 text-white text-[0.5rem] font-bold px-1 py-0.5 rounded-sm shadow-sm z-20">Refusée</div>}
                                 {/* Badge P/D (disappears on hover) */}
                                 <div className={`absolute top-0.5 right-0.5 text-[0.42rem] font-extrabold px-0.5 py-[0.5px] rounded transition-opacity duration-200 ${s.type === 'presentiel' ? 'text-emerald-700 bg-emerald-600/10 dark:text-emerald-300 dark:bg-emerald-500/20' : 'text-cyan-800 bg-cyan-700/10 dark:text-blue-300 dark:bg-blue-500/20'} group-hover/card:opacity-0 ${isCompact ? 'hidden' : ''}`}>
                                   {s.type === 'presentiel' ? 'P' : 'D'}
@@ -415,16 +518,18 @@ const Schedule = () => {
 
                                 <div className={`font-bold tracking-tight pr-3 ${s.type === 'presentiel' ? 'text-emerald-900 dark:text-emerald-100' : 'text-cyan-900 dark:text-blue-100'} ${moduleFontClass}`}>{s.module}</div>
                                 <div className={`font-medium ${s.type === 'presentiel' ? 'text-emerald-700 dark:text-emerald-400' : 'text-cyan-800 dark:text-blue-300'} ${subFontClass}`}>{s.formateur} • {s.salle}</div>
-                                {!hideFooter && (s.annee || s.filiere) && (
+                                {!hideFooter && (s.annee || s.filiere || s.groupe) && (
                                   <div className={`font-semibold uppercase tracking-wider border-t-[0.5px] ${s.type === 'presentiel' ? 'text-emerald-600 border-emerald-600/20 dark:border-emerald-400/20 dark:text-emerald-500' : 'text-cyan-700 border-blue-600/20 dark:border-blue-400/20 dark:text-blue-400'} ${footerFontClass}`}>
-                                    {s.annee} {s.filiere && `• ${s.filiere}`}
+                                    {s.annee} {s.filiere && `• ${s.filiere}`} {s.groupe && `• ${s.groupe}`}
                                   </div>
                                 )}
                               </div>
                             );
                           })}
                         </div>
-                        <div className="absolute bottom-[3px] right-[5px] text-slate-400 text-[0.9rem] font-light opacity-0 transition-opacity w-[18px] h-[18px] flex items-center justify-center bg-brand-light rounded-full text-brand group-hover:opacity-100">+</div>
+                        {!readOnly && (
+                          <div className="absolute bottom-[3px] right-[5px] text-slate-400 text-[0.9rem] font-light opacity-0 transition-opacity w-[18px] h-[18px] flex items-center justify-center bg-brand-light rounded-full text-brand group-hover:opacity-100">+</div>
+                        )}
                       </td>
                     );
                   })}
@@ -446,14 +551,16 @@ const Schedule = () => {
                   </h3>
                   <div className="flex flex-col gap-2">
                     {daySessions.map(s => (
-                      <div key={s.id} className={`p-3 cursor-pointer rounded-lg border-l-4 ${s.type === 'presentiel' ? 'bg-presentiel-bg border-presentiel-accent dark:bg-presentiel-darkBg dark:border-presentiel-text' : 'bg-distanciel-bg border-distanciel-accent dark:bg-distanciel-darkBg dark:border-brand-light'}`} onClick={(e) => handleOpenEdit(e, s)}>
-                        <div className="flex justify-between items-center mb-1">
+                      <div key={s.id} className={`p-3 cursor-pointer rounded-lg border-l-4 ${s.type === 'presentiel' ? 'bg-presentiel-bg border-presentiel-accent dark:bg-presentiel-darkBg dark:border-presentiel-text' : 'bg-distanciel-bg border-distanciel-accent dark:bg-distanciel-darkBg dark:border-brand-light'} ${s.status === 'en_attente' ? 'opacity-75 border-dashed bg-amber-50 dark:bg-amber-900/20 border-amber-400' : ''} ${s.status === 'refusee' ? 'opacity-60 bg-red-50 border-red-500 dark:bg-red-900/20' : ''}`} onClick={(e) => handleOpenEdit(e, s)}>
+                        <div className="flex justify-between items-center mb-1 relative">
                           <span className="font-bold text-slate-900 dark:text-slate-100 text-base">{timeSlots[s.slotIdx]}</span>
                           <span className={`text-xs px-2 py-0.5 rounded-full ${s.type === 'presentiel' ? 'bg-presentiel-accent/20 text-presentiel-text dark:bg-presentiel-text/20 dark:text-presentiel-text' : 'bg-distanciel-accent/20 text-distanciel-text dark:bg-brand-light/20 dark:text-brand-light'}`}>{s.type}</span>
+                          {s.status === 'en_attente' && <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-[0.6rem] font-bold px-1.5 py-0.5 rounded-sm shadow-sm z-20">En attente</div>}
+                          {s.status === 'refusee' && <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[0.6rem] font-bold px-1.5 py-0.5 rounded-sm shadow-sm z-20">Refusée</div>}
                         </div>
                         <div className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-1">{s.module}</div>
                         <div className="text-sm text-slate-600 dark:text-slate-400">👨‍🏫 {s.formateur} &nbsp; 🏫 {s.salle}</div>
-                        {(s.annee || s.filiere) && <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">🎓 {s.annee} {s.filiere && `• ${s.filiere}`}</div>}
+                        {(s.annee || s.filiere || s.groupe) && <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">🎓 {s.annee} {s.filiere && `• ${s.filiere}`} {s.groupe && `• ${s.groupe}`}</div>}
                       </div>
                     ))}
                   </div>
@@ -469,6 +576,16 @@ const Schedule = () => {
         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-[1000] animate-fadeIn" onClick={handleClose}>
           <div className="bg-white dark:bg-slate-800 w-[400px] max-w-[90%] p-5 rounded-xl shadow-xl animate-slideUp border border-white/30 dark:border-slate-700" onClick={e => e.stopPropagation()}>
             <h2 className="mt-0 mb-4 text-lg font-bold tracking-tight bg-gradient-to-br from-brand to-purple-600 bg-clip-text text-transparent">{editingSession ? 'Modifier la Séance' : 'Nouvelle Séance'}</h2>
+            
+            {formateurMode && !editingSession && (
+              <div className="mb-4 p-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium rounded-lg flex items-start gap-2 dark:bg-amber-900/30 dark:border-amber-700/50 dark:text-amber-300">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <span>Cette séance sera en attente d'acceptation ou de refus par le Chef de Pôle.</span>
+              </div>
+            )}
+
             <form onSubmit={handleSave} className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1 col-span-2">
                 <label className="text-[0.6rem] font-bold text-slate-500 uppercase tracking-wide">Module</label>
@@ -479,10 +596,16 @@ const Schedule = () => {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[0.6rem] font-bold text-slate-500 uppercase tracking-wide">Formateur</label>
-                <select required className="px-2 py-1.5 rounded-md border-1.5 border-slate-200 text-xs text-slate-900 outline-none transition-colors bg-white hover:border-brand-light focus:border-brand focus:ring-2 focus:ring-brand/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={formData.formateur} onChange={e => setFormData({...formData, formateur: e.target.value})}>
-                  <option value="" disabled>Sélectionner un formateur</option>
-                  {listFormateurs.map(f => <option key={f} value={f}>{f}</option>)}
-                </select>
+                {formateurMode ? (
+                  <div className="px-2 py-1.5 rounded-md border-1.5 border-slate-200 bg-slate-50 text-xs text-slate-700 font-semibold dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 cursor-not-allowed">
+                    {myName}
+                  </div>
+                ) : (
+                  <select required className="px-2 py-1.5 rounded-md border-1.5 border-slate-200 text-xs text-slate-900 outline-none transition-colors bg-white hover:border-brand-light focus:border-brand focus:ring-2 focus:ring-brand/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={formData.formateur} onChange={e => setFormData({...formData, formateur: e.target.value})}>
+                    <option value="" disabled>Sélectionner un formateur</option>
+                    {listFormateurs.map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                )}
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[0.6rem] font-bold text-slate-500 uppercase tracking-wide">
@@ -535,7 +658,10 @@ const Schedule = () => {
               <div className="flex flex-col gap-1">
                 <label className="text-[0.6rem] font-bold text-slate-500 uppercase tracking-wide">Pôle</label>
                 <select className="px-2 py-1.5 rounded-md border-1.5 border-slate-200 text-xs text-slate-900 outline-none transition-colors bg-white hover:border-brand-light focus:border-brand focus:ring-2 focus:ring-brand/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={formData.pole} onChange={e => setFormData({...formData, pole: e.target.value})}>
-                  {config.poles.map(p => <option key={p} value={p}>{p}</option>)}
+                  {config.poles.map(p => {
+                    const pVal = getOptionValue(p);
+                    return <option key={pVal} value={pVal}>{pVal}</option>;
+                  })}
                 </select>
               </div>
               <div className="flex flex-col gap-1">
@@ -549,17 +675,30 @@ const Schedule = () => {
                 <label className="text-[0.6rem] font-bold text-slate-500 uppercase tracking-wide">Année</label>
                 <select className="px-2 py-1.5 rounded-md border-1.5 border-slate-200 text-xs text-slate-900 outline-none transition-colors bg-white hover:border-brand-light focus:border-brand focus:ring-2 focus:ring-brand/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={formData.annee || ''} onChange={e => setFormData({...formData, annee: e.target.value})}>
                   <option value="">Sélectionner</option>
-                  {config.annees.map(a => <option key={a} value={a}>{a}</option>)}
+                  {config.annees.map(a => {
+                    const aVal = getOptionValue(a);
+                    return <option key={aVal} value={aVal}>{aVal}</option>;
+                  })}
                 </select>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[0.6rem] font-bold text-slate-500 uppercase tracking-wide">Filière</label>
                 <select className="px-2 py-1.5 rounded-md border-1.5 border-slate-200 text-xs text-slate-900 outline-none transition-colors bg-white hover:border-brand-light focus:border-brand focus:ring-2 focus:ring-brand/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={formData.filiere || ''} onChange={e => setFormData({...formData, filiere: e.target.value})}>
                   <option value="">Sélectionner</option>
-                  {config.filieres.map(f => <option key={f} value={f}>{f}</option>)}
+                  {config.filieres.map(f => {
+                    const fVal = getOptionValue(f);
+                    return <option key={fVal} value={fVal}>{fVal}</option>;
+                  })}
                 </select>
               </div>
-              <div className="flex flex-col gap-1 col-span-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-[0.6rem] font-bold text-slate-500 uppercase tracking-wide">Groupe</label>
+                <select className="px-2 py-1.5 rounded-md border-1.5 border-slate-200 text-xs text-slate-900 outline-none transition-colors bg-white hover:border-brand-light focus:border-brand focus:ring-2 focus:ring-brand/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={formData.groupe || ''} onChange={e => setFormData({...formData, groupe: e.target.value})}>
+                  <option value="">Sélectionner</option>
+                  {listGroupes.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
                 <label className="text-[0.6rem] font-bold text-slate-500 uppercase tracking-wide">Date</label>
                 <input type="date" className="px-2 py-1.5 rounded-md border-1.5 border-slate-200 text-xs text-slate-900 outline-none transition-colors bg-white hover:border-brand-light focus:border-brand focus:ring-2 focus:ring-brand/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={formData.date || ''} onChange={e => setFormData({...formData, date: e.target.value})} />
               </div>
@@ -586,7 +725,7 @@ const Schedule = () => {
                       <div className="text-sm text-slate-600 dark:text-slate-400">{s.formateur} • {s.salle} • {s.day} ({timeSlots[s.slotIdx]})</div>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => { dispatch(removeSession(s.id)); }} className="bg-red-500 text-white border-none py-1.5 px-3 rounded cursor-pointer hover:bg-red-600 transition-colors">Refuser</button>
+                      <button onClick={() => { dispatch(rejectSession(s.id)); }} className="bg-red-500 text-white border-none py-1.5 px-3 rounded cursor-pointer hover:bg-red-600 transition-colors">Refuser</button>
                       <button onClick={() => { dispatch(acceptSession(s.id)); }} className="bg-emerald-500 text-white border-none py-1.5 px-3 rounded cursor-pointer hover:bg-emerald-600 transition-colors">Accepter</button>
                     </div>
                   </div>
