@@ -17,7 +17,7 @@ export default function LoginTest({ onLogin }) {
 
       <div className="bg-white/80 backdrop-blur-xl p-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 w-full max-w-[420px] text-center z-10">
         <img src="/cmc-logo.png" alt="CMC Logo" className="h-20 object-contain drop-shadow-sm mx-auto mb-6" />
-        <h1 className="text-2xl font-extrabold mb-2 text-slate-800 tracking-tight">Bienvenue sur GESEMPL</h1>
+        <h1 className="text-2xl font-extrabold mb-2 text-slate-800 tracking-tight">Bienvenue sur <span className="text-cyan-600">GESEMPL</span></h1>
         <p className="text-sm text-slate-500 mb-8 font-medium">Sélectionnez un profil pour vous connecter</p>
         
         <div className="flex flex-col gap-3">

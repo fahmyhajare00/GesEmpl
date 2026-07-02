@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import Schedule from './Schedule';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const FormateurInterface = () => {
   const { user } = useSelector(state => state.schedule);
@@ -13,6 +15,28 @@ const FormateurInterface = () => {
     alert('Votre déclaration a été envoyée avec succès et est en attente de validation.');
   };
 
+  const handleExportPDF = async () => {
+    const tableElement = document.querySelector('.table-wrapper');
+    if (!tableElement) {
+      alert("Erreur : le tableau de l'emploi du temps est introuvable.");
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(tableElement, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('landscape', 'pt', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Emploi_personnel_${myName.replace(/\s+/g, '_')}.pdf`);
+    } catch (err) {
+      console.error("Erreur lors de l'export PDF:", err);
+      alert("Erreur lors de la génération du PDF.");
+    }
+  };
+
   return (
     <div className="h-full w-full">
       <div className="flex justify-between items-end mb-4 px-4">
@@ -20,12 +44,26 @@ const FormateurInterface = () => {
           <h1 className="text-2xl font-extrabold text-slate-800 dark:text-white mb-2">Espace Formateur</h1>
           <p className="text-slate-600 dark:text-slate-300">Bienvenue, <span className="font-bold text-emerald-500">{myName}</span></p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-colors"
-        >
-          + Signaler une absence
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={handleExportPDF}
+            className="flex items-center gap-2 bg-white border-2 border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700 px-4 py-2 rounded-lg font-bold shadow-sm transition-colors"
+            title="Exporter l'emploi du temps en PDF"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Exporter PDF
+          </button>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-colors"
+          >
+            + Signaler une absence
+          </button>
+        </div>
       </div>
       <Schedule 
         fixedFormateur={myName}

@@ -52,7 +52,10 @@ export const fetchDataFromApi = async () => {
   const generateDateForDay = (dayIndex) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + dayIndex);
-    return d.toISOString().split('T')[0];
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dStr = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dStr}`;
   };
 
   // Créer des séances factices pour la semaine en cours
@@ -109,7 +112,7 @@ export const fetchDataFromApi = async () => {
       status: 'validated',
       lien: 'https://meet.google.com/abc',
       date: generateDateForDay(1),
-      weekKey: generateDateForDay(1)
+      weekKey: generateDateForDay(0)
     },
     {
       id: 4,
@@ -127,7 +130,7 @@ export const fetchDataFromApi = async () => {
       status: 'validated',
       lien: 'https://zoom.us/j/123456',
       date: generateDateForDay(2),
-      weekKey: generateDateForDay(2)
+      weekKey: generateDateForDay(0)
     },
     {
       id: 5,
@@ -145,12 +148,32 @@ export const fetchDataFromApi = async () => {
       status: 'validated',
       lien: '',
       date: generateDateForDay(3),
-      weekKey: generateDateForDay(3)
+      weekKey: generateDateForDay(0)
     }
   ];
 
   // Simuler un délai réseau
   await new Promise(resolve => setTimeout(resolve, 800));
+
+  try {
+    const savedSessions = localStorage.getItem('gesempl_sessions');
+    const savedConfig = localStorage.getItem('gesempl_config');
+    
+    let currentSessions = sessions;
+    let currentConfig = config;
+
+    if (savedSessions) {
+      currentSessions = JSON.parse(savedSessions);
+    }
+    if (savedConfig) {
+      currentConfig = JSON.parse(savedConfig);
+    }
+
+    return {
+      sessions: currentSessions,
+      config: currentConfig
+    };
+  } catch (e) {}
 
   return {
     sessions,

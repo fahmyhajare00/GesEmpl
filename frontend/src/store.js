@@ -6,7 +6,10 @@ function getMondayKey(date) {
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   d.setDate(diff);
-  return d.toISOString().split('T')[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dStr = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dStr}`;
 }
 
 const currentWeekKey = getMondayKey(new Date());
@@ -55,7 +58,7 @@ const scheduleSlice = createSlice({
       saveSessions(state.sessions);
     },
     removeSession: (state, action) => {
-      state.sessions = state.sessions.filter(s => s.id !== action.payload);
+      state.sessions = state.sessions.filter(s => String(s.id) !== String(action.payload));
       saveSessions(state.sessions);
     },
     moveSession: (state, action) => {
@@ -103,10 +106,26 @@ const scheduleSlice = createSlice({
       state.config = action.payload.config;
       state.sessions = action.payload.sessions;
     },
+    setSessions: (state, action) => {
+      state.sessions = action.payload;
+      saveSessions(state.sessions);
+    },
+    duplicateWeek: (state, action) => {
+      const { sourceWeekKey, targetWeekKey } = action.payload;
+      const sessionsToCopy = state.sessions.filter(s => s.weekKey === sourceWeekKey);
+      const copiedSessions = sessionsToCopy.map(s => ({
+        ...s,
+        id: Date.now() + Math.floor(Math.random() * 10000),
+        weekKey: targetWeekKey,
+        status: 'validee'
+      }));
+      state.sessions = [...state.sessions, ...copiedSessions];
+      saveSessions(state.sessions);
+    },
   }
 });
 
-export const { addSession, removeSession, moveSession, acceptSession, rejectSession, updateConfig, addToConfig, removeFromConfig, setStoreData } = scheduleSlice.actions;
+export const { addSession, removeSession, moveSession, acceptSession, rejectSession, updateConfig, addToConfig, removeFromConfig, setStoreData, setSessions, duplicateWeek } = scheduleSlice.actions;
 
 export const store = configureStore({
   reducer: { schedule: scheduleSlice.reducer },

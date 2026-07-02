@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addSession, removeSession, moveSession, acceptSession, rejectSession, updateConfig, addToConfig, removeFromConfig } from '../store';
+import { addSession, removeSession, moveSession, acceptSession, rejectSession, updateConfig, addToConfig, removeFromConfig, duplicateWeek, setSessions } from '../store';
+import api from '../services/api';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useSearchParams } from 'react-router-dom';
@@ -103,7 +104,10 @@ const Schedule = ({ fixedFormateur, initialFormateur, fixedGroupe, fixedPole, hi
   // --- FILTRAGE PAR SEMAINE + FILTRES ---
   const currentWeekKey = useMemo(() => {
     const d = new Date(currentWeek.start);
-    return d.toISOString().split('T')[0];
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dStr = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dStr}`;
   }, [currentWeek]);
 
   const myGroups = useMemo(() => {
@@ -201,12 +205,19 @@ const Schedule = ({ fixedFormateur, initialFormateur, fixedGroupe, fixedPole, hi
     setIsModalOpen(true);
   };
 
+  const handleDuplicateSession = (e, session) => {
+    e.stopPropagation();
+    setEditingSession(null);
+    setFormData({ ...session, id: undefined });
+    setIsModalOpen(true);
+  };
+
   const handleClose = () => {
     setIsModalOpen(false);
     setEditingSession(null);
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
 
     const targetDay = formData.day;
@@ -227,18 +238,27 @@ const Schedule = ({ fixedFormateur, initialFormateur, fixedGroupe, fixedPole, hi
       }
     }
 
-    if (editingSession) {
-      dispatch(removeSession(editingSession.id));
-      dispatch(addSession({ ...formData, day: targetDay, slotIdx: targetSlotIdx, id: editingSession.id, weekKey: currentWeekKey, status: formateurMode ? 'en_attente' : 'validee' }));
-    } else {
-      dispatch(addSession({ ...formData, day: targetDay, slotIdx: targetSlotIdx, id: Date.now(), weekKey: currentWeekKey, status: formateurMode ? 'en_attente' : 'validee' }));
+    const payload = { ...formData, day: targetDay, slotIdx: targetSlotIdx, weekKey: currentWeekKey, status: formateurMode ? 'en_attente' : 'validee' };
+
+    try {
+      if (editingSession) {
+        const response = await api.put(`/seances/${editingSession.id}`, payload);
+        dispatch(removeSession(editingSession.id));
+        dispatch(addSession(response.data));
+      } else {
+        const response = await api.post('/seances', payload);
+        dispatch(addSession(response.data));
+      }
+      
+      if (formateurMode) {
+        alert("Votre demande de séance a été envoyée au Chef de Pôle. Elle est maintenant en attente de validation.");
+      }
+      
+      handleClose();
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde de la séance:', error);
+      alert('Erreur lors de la sauvegarde de la séance. Vérifiez votre connexion.');
     }
-    
-    if (formateurMode) {
-      alert("Votre demande de séance a été envoyée au Chef de Pôle. Elle est maintenant en attente de validation.");
-    }
-    
-    handleClose();
   };
 
   const handleResetFilters = () => {
@@ -272,12 +292,24 @@ const Schedule = ({ fixedFormateur, initialFormateur, fixedGroupe, fixedPole, hi
     }
   };
 
+
+
   const handleDragStart = (e, sessionId) => e.dataTransfer.setData("sessionId", sessionId);
   const handleDragOver = (e) => e.preventDefault();
-  const handleDrop = (e, targetDay, targetSlotIdx) => {
+  const handleDrop = async (e, targetDay, targetSlotIdx) => {
     e.preventDefault();
     const sessionId = Number(e.dataTransfer.getData("sessionId"));
-    dispatch(moveSession({ id: sessionId, day: targetDay, slotIdx: targetSlotIdx }));
+    const sessionToCopy = sessions.find(s => String(s.id) === String(sessionId));
+    if (sessionToCopy) {
+      const payload = { ...sessionToCopy, id: undefined, day: targetDay, slotIdx: targetSlotIdx };
+      try {
+        const response = await api.post('/seances', payload);
+        dispatch(addSession(response.data));
+      } catch (error) {
+        console.error('Erreur lors de la duplication de la séance:', error);
+        alert('Erreur lors de la duplication de la séance.');
+      }
+    }
   };
 
   const isCurrentWeek = useMemo(() => {
@@ -453,6 +485,23 @@ const Schedule = ({ fixedFormateur, initialFormateur, fixedGroupe, fixedPole, hi
           </div>
         </div>
         <div className="flex items-center gap-2 justify-end">
+          {!readOnly && (
+            <button className="px-3 py-2 bg-slate-100 border border-slate-300 rounded-full text-slate-700 cursor-pointer text-[0.7rem] font-semibold transition-all hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700" onClick={() => {
+              const d = new Date(currentWeek.start);
+              d.setDate(d.getDate() + 7);
+              const y = d.getFullYear();
+              const m = String(d.getMonth() + 1).padStart(2, '0');
+              const dStr = String(d.getDate()).padStart(2, '0');
+              const targetWeekKey = `${y}-${m}-${dStr}`;
+              if(window.confirm("Dupliquer l'emploi de cette semaine vers la semaine suivante ?")) {
+                dispatch(duplicateWeek({ sourceWeekKey: currentWeekKey, targetWeekKey }));
+                alert("Semaine dupliquée avec succès !");
+                nextWeek();
+              }
+            }}>
+              Dupliquer semaine
+            </button>
+          )}
           <button className="px-4 py-2 bg-brand border-none rounded-full text-white cursor-pointer text-[0.8rem] font-semibold transition-all shadow-sm hover:bg-brand-hover hover:-translate-y-px hover:shadow-md" onClick={nextWeek}>
             Semaine suivante →
           </button>
@@ -508,7 +557,18 @@ const Schedule = ({ fixedFormateur, initialFormateur, fixedGroupe, fixedPole, hi
                                 {/* Delete Button (appears on hover) */}
                                 <button 
                                   className="absolute top-0.5 right-0.5 w-4 h-4 rounded flex items-center justify-center bg-red-100 text-red-600 border border-red-200 opacity-0 group-hover/card:opacity-100 transition-all duration-200 hover:bg-red-500 hover:text-white dark:bg-red-900/30 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-600 dark:hover:text-white z-10"
-                                  onClick={(e) => { e.stopPropagation(); if(window.confirm("Voulez-vous vraiment supprimer cette séance ?")) dispatch(removeSession(s.id)); }}
+                                  onClick={async (e) => { 
+                                    e.stopPropagation(); 
+                                    if(window.confirm("Voulez-vous vraiment supprimer cette séance ?")) {
+                                      try {
+                                        await api.delete(`/seances/${s.id}`);
+                                        dispatch(removeSession(s.id));
+                                      } catch (error) {
+                                        console.error('Erreur lors de la suppression de la séance:', error);
+                                        alert('Erreur lors de la suppression de la séance.');
+                                      }
+                                    }
+                                  }}
                                   title="Supprimer la séance"
                                 >
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-[10px] w-[10px]" viewBox="0 0 20 20" fill="currentColor">
@@ -693,10 +753,16 @@ const Schedule = ({ fixedFormateur, initialFormateur, fixedGroupe, fixedPole, hi
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[0.6rem] font-bold text-slate-500 uppercase tracking-wide">Groupe</label>
-                <select className="px-2 py-1.5 rounded-md border-1.5 border-slate-200 text-xs text-slate-900 outline-none transition-colors bg-white hover:border-brand-light focus:border-brand focus:ring-2 focus:ring-brand/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={formData.groupe || ''} onChange={e => setFormData({...formData, groupe: e.target.value})}>
-                  <option value="">Sélectionner</option>
-                  {listGroupes.map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
+                {formData.type === 'distanciel' ? (
+                  <select multiple className="px-2 py-1.5 rounded-md border-1.5 border-slate-200 text-xs text-slate-900 outline-none transition-colors bg-white hover:border-brand-light focus:border-brand focus:ring-2 focus:ring-brand/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 h-24" value={(formData.groupe || '').split(', ').filter(Boolean)} onChange={e => setFormData({...formData, groupe: Array.from(e.target.selectedOptions, option => option.value).join(', ')})}>
+                    {listGroupes.map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                ) : (
+                  <select className="px-2 py-1.5 rounded-md border-1.5 border-slate-200 text-xs text-slate-900 outline-none transition-colors bg-white hover:border-brand-light focus:border-brand focus:ring-2 focus:ring-brand/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={formData.groupe || ''} onChange={e => setFormData({...formData, groupe: e.target.value})}>
+                    <option value="">Sélectionner</option>
+                    {listGroupes.map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                )}
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[0.6rem] font-bold text-slate-500 uppercase tracking-wide">Date</label>
